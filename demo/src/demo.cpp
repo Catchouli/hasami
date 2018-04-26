@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
   std::string err;
   
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "res/teapot.obj");
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "res/buddha.obj");
 
   if (!err.empty()) {
     fprintf(stderr, "%s: %s\n", (ret ? "warning" : "error"), err.c_str());
@@ -102,31 +102,71 @@ int main(int argc, char** argv) {
     fprintf(stderr, "Failed to link program: %s\n", msg);
   }
 
-  glm::mat4 m = glm::translate(glm::perspective(60.0f, 1.0f, 0.1f, 10.0f), glm::vec3(0.0f, 0.0f, -0.5f));
-  glUseProgram(prog);
-  auto loc = glGetUniformLocation(prog, "mvp");
-  glUniformMatrix4fv(loc, 1, GL_FALSE, &m[0][0]);
-
-  struct Vertex { glm::vec3 pos; glm::vec3 nrm; };
-  std::vector<Vertex> vertexBuf;
-  for (const auto& shape : shapes) {
+  // Run through and check if it's indexed
+  bool indexed = false;
+  /*for (const auto& shape : shapes) {
     for (const auto& idx : shape.mesh.indices) {
-      const float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-      const auto& v = (idx.vertex_index < 0 ? zero : &attrib.vertices[idx.vertex_index*3]);
-      const auto& n = (idx.normal_index < 0 ? zero : &attrib.normals[idx.normal_index*3]);
-      vertexBuf.push_back({ glm::vec3(v[0], v[1], v[2]), glm::vec3(n[0], n[1], n[2]) });
+      if (indexed && (idx.normal_index != -1 && idx.normal_index != idx.vertex_index) || (idx.texcoord_index != -1 && idx.texcoord_index != idx.vertex_index)) {
+        indexed = false;
+        break;
+      }
+    }
+    if (!indexed)
+      break;
+  }*/
+
+  printf("Model indexed: %s\n", indexed ? "true" : "false");
+
+  struct Vertex { glm::vec3 pos; glm::vec3 nrm; glm::vec2 texCoord; };
+  std::vector<Vertex> vertexBuf;
+  std::vector<int> indexBuf;
+
+  if (indexed) {
+    throw;
+  }
+  else {
+    size_t offset = 0;
+    for (const auto& shape : shapes) {
+      for (const auto& verts : shape.mesh.num_face_vertices) {
+        if (verts != 3) {
+          printf("Polygon with more or less than 3 sides detected in obj model, skipping\n");
+          offset += verts;
+          continue;
+        }
+
+        for (int i = 0; i < verts; ++i) {
+          const float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+          const auto& idx = shape.mesh.indices[offset];
+
+          const auto& v = idx.vertex_index != -1 ? (float*)&attrib.vertices[idx.vertex_index*3] : zero;
+          const auto& n = idx.normal_index != -1 ? (float*)&attrib.normals[idx.normal_index*3] : zero;
+          const auto& u = idx.texcoord_index != -1 ? (float*)&attrib.texcoords[idx.texcoord_index*3] : zero;
+
+          vertexBuf.push_back({ glm::vec3(v[0], v[1], v[2]), glm::vec3(n[0], n[1], n[2]), glm::vec2(u[0], u[1]) });
+
+          offset++;
+        }
+      }
     }
   }
 
   // loop through and generate normals
+  std::vector<std::vector<glm::vec3>> m_vertexNormals;
+  m_vertexNormals.resize(vertexBuf.size());
   for (int i = 0; i < vertexBuf.size() / 3; ++i) {
     auto& a = vertexBuf[i*3+0];
     auto& b = vertexBuf[i*3+1];
     auto& c = vertexBuf[i*3+2];
 
-    glm::vec3 nrm = glm::normalize(glm::cross(b.pos - a.pos, c.pos - a.pos));
+    glm::vec3 nrm = -glm::normalize(glm::cross(b.pos - a.pos, c.pos - a.pos));
     a.nrm = b.nrm = c.nrm = nrm;
   }
+
+  GLuint buf;
+  glGenBuffers(1, &buf);
+  glBindBuffer(GL_ARRAY_BUFFER, buf);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertexBuf.size(), vertexBuf.data(), GL_STATIC_DRAW);
 
   bool running = true;
   while (running) {
@@ -135,6 +175,27 @@ int main(int argc, char** argv) {
       if (evt.type == SDL_QUIT)
         running = false;
     }
+
+    static float rotation = 0.0f;
+    rotation += 0.01f;
+
+    glm::mat4 proj = glm::perspective(3.141f / 2.0f, 1.0f, 0.1f, 50.0f);
+    glm::mat4 trans = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -1.0f));
+    glm::mat4 rot = glm::rotate(glm::mat4(), rotation, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 pivot = glm::translate(glm::mat4(), glm::vec3(-0.5f, -0.5f, -0.5f));
+    pivot = glm::mat4();
+    glm::mat4 obj = glm::rotate(glm::mat4(), -3.141f/2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+
+    glm::mat4 mv = trans * rot * pivot * obj;
+    glm::mat4 mvp = proj * mv;
+
+    glUseProgram(prog);
+
+    auto loc = glGetUniformLocation(prog, "mv");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, &mv[0][0]);
+
+    loc = glGetUniformLocation(prog, "mvp");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, &mvp[0][0]);
 
     glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -146,19 +207,17 @@ int main(int argc, char** argv) {
     auto pos = glGetAttribLocation(prog, "pos");
     auto nrm = glGetAttribLocation(prog, "nrm");
 
+    glBindBuffer(GL_ARRAY_BUFFER, buf);
+
     glEnableVertexAttribArray(pos);
     glEnableVertexAttribArray(nrm);
-    glVertexAttribPointer(pos, 3 * sizeof(float), GL_FLOAT, false, 6 * sizeof(float), (void*)(vertexBuf.data()));
-    glVertexAttribPointer(nrm, 3 * sizeof(float), GL_FLOAT, false, 6 * sizeof(float), (void*)(vertexBuf.data()+3*sizeof(float)));
-    glDisableVertexAttribArray(nrm);
-    glDisableVertexAttribArray(nrm);
+    glVertexAttribPointer(pos, 3, GL_FLOAT, false, sizeof(Vertex), (void*)(0));
+    glVertexAttribPointer(nrm, 3, GL_FLOAT, false, sizeof(Vertex), (void*)(3*sizeof(float)));
 
-    glBegin(GL_TRIANGLES);
-    for (const auto& vert : vertexBuf) {
-      glVertex3f(vert.pos.x, vert.pos.y, vert.pos.z);
-      glNormal3f(vert.nrm.x, vert.nrm.y, vert.nrm.z);
-    }
-    glEnd();
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertexBuf.size());
+
+    glDisableVertexAttribArray(pos);
+    glDisableVertexAttribArray(nrm);
 
     SDL_GL_SwapWindow(win);
   }
