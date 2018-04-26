@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
   std::string err;
   
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "res/buddha.obj");
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "res/teapot.obj");
 
   if (!err.empty()) {
     fprintf(stderr, "%s: %s\n", (ret ? "warning" : "error"), err.c_str());
@@ -104,17 +104,29 @@ int main(int argc, char** argv) {
 
   glm::mat4 m = glm::translate(glm::perspective(60.0f, 1.0f, 0.1f, 10.0f), glm::vec3(0.0f, 0.0f, -0.5f));
   glUseProgram(prog);
-  glUniformMatrix4fv(0, 1, GL_FALSE, &m[0][0]);
+  auto loc = glGetUniformLocation(prog, "mvp");
+  glUniformMatrix4fv(loc, 1, GL_FALSE, &m[0][0]);
 
-  std::vector<glm::vec3> vertexBuf;
-    for (const auto& shape : shapes) {
-      for (const auto& idx : shape.mesh.indices) {
-        const auto& a = attrib.vertices[idx.vertex_index*3];
-        const auto& b = attrib.vertices[idx.vertex_index*3+1];
-        const auto& c = attrib.vertices[idx.vertex_index*3+2];
-        vertexBuf.push_back(glm::vec3(a, b, c));
-      }
+  struct Vertex { glm::vec3 pos; glm::vec3 nrm; };
+  std::vector<Vertex> vertexBuf;
+  for (const auto& shape : shapes) {
+    for (const auto& idx : shape.mesh.indices) {
+      const float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+      const auto& v = (idx.vertex_index < 0 ? zero : &attrib.vertices[idx.vertex_index*3]);
+      const auto& n = (idx.normal_index < 0 ? zero : &attrib.normals[idx.normal_index*3]);
+      vertexBuf.push_back({ glm::vec3(v[0], v[1], v[2]), glm::vec3(n[0], n[1], n[2]) });
     }
+  }
+
+  // loop through and generate normals
+  for (int i = 0; i < vertexBuf.size() / 3; ++i) {
+    auto& a = vertexBuf[i*3+0];
+    auto& b = vertexBuf[i*3+1];
+    auto& c = vertexBuf[i*3+2];
+
+    glm::vec3 nrm = glm::normalize(glm::cross(b.pos - a.pos, c.pos - a.pos));
+    a.nrm = b.nrm = c.nrm = nrm;
+  }
 
   bool running = true;
   while (running) {
@@ -127,23 +139,25 @@ int main(int argc, char** argv) {
     glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    GLfloat gray[] = { 0.75f, 0.75f, 0.75f, 1.0f };
-    GLfloat lightPos[] = { 0.0f, 5.0f, 5.0f, 1.0f};
-    glEnable(GL_LIGHTING);
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, gray);
-    glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-
-    glLoadIdentity();
-    glFrustum(-1.0, 1.0, 1.0, -1.0, 0.1, 10.0);
-    glTranslatef(0.0f, 0.0f, -0.5f);
-    glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-
     glUseProgram(prog);
 
     glEnable(GL_DEPTH_TEST);
 
+    auto pos = glGetAttribLocation(prog, "pos");
+    auto nrm = glGetAttribLocation(prog, "nrm");
+
+    glEnableVertexAttribArray(pos);
+    glEnableVertexAttribArray(nrm);
+    glVertexAttribPointer(pos, 3 * sizeof(float), GL_FLOAT, false, 6 * sizeof(float), (void*)(vertexBuf.data()));
+    glVertexAttribPointer(nrm, 3 * sizeof(float), GL_FLOAT, false, 6 * sizeof(float), (void*)(vertexBuf.data()+3*sizeof(float)));
+    glDisableVertexAttribArray(nrm);
+    glDisableVertexAttribArray(nrm);
+
     glBegin(GL_TRIANGLES);
+    for (const auto& vert : vertexBuf) {
+      glVertex3f(vert.pos.x, vert.pos.y, vert.pos.z);
+      glNormal3f(vert.nrm.x, vert.nrm.y, vert.nrm.z);
+    }
     glEnd();
 
     SDL_GL_SwapWindow(win);
