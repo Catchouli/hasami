@@ -13,7 +13,7 @@ out vec3 var_nrm;
 void main()
 {
   gl_Position = mvp * vec4(pos, 1.0);
-  var_nrm = mat3(mv) * nrm;
+  var_nrm = normalize(mat3(mv) * nrm);
 }
 
 #endif
