@@ -212,14 +212,6 @@ void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, con
 
   for (const auto& vert : vbuf) {
     fwrite(&vert, sizeof(Vertex), 1, fd);
-    /*fwrite(&vert.pos[0], sizeof(float), 1, fd);
-    fwrite(&vert.pos[1], sizeof(float), 1, fd);
-    fwrite(&vert.pos[2], sizeof(float), 1, fd);
-    fwrite(&vert.nrm[0], sizeof(float), 1, fd);
-    fwrite(&vert.nrm[1], sizeof(float), 1, fd);
-    fwrite(&vert.nrm[2], sizeof(float), 1, fd);
-    fwrite(&vert.texCoord[0], sizeof(float), 1, fd);
-    fwrite(&vert.texCoord[1], sizeof(float), 1, fd);*/
   }
 
   int attribSize = (int)attribs.size();

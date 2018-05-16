@@ -129,9 +129,87 @@ void ModelNode::draw(const Shader& shader, const glm::mat4& projection, const gl
   m_mesh->draw(shader, projection, modelview);
 }
 
+class FPSCamera
+{
+public:
+  FPSCamera();
+  void mouseMove(int x, int y);
+  void update(float timeDelta, const Uint8* keyStates);
+
+  const glm::mat4& projMat() { return m_proj; }
+  const glm::mat4& viewMat() { return m_view; }
+
+  float m_camSpeed;
+  float m_camSensitivity;
+
+  glm::vec3 m_pos;
+  glm::vec2 m_rot;
+
+private:
+  glm::mat4 m_proj;
+  glm::mat4 m_view;
+
+  glm::vec3 m_forward;
+  glm::vec3 m_left;
+  glm::vec3 m_up;
+};
+
+FPSCamera::FPSCamera()
+  : m_forward(0.0, 0.0, -1.0)
+  , m_left(-1.0, 0.0, 0.0)
+  , m_up(0.0, 1.0, 0.0)
+  , m_camSpeed(1.0f)
+  , m_camSensitivity(1.0f)
+{
+}
+
+void FPSCamera::mouseMove(int x, int y)
+{
+  m_rot.y += x;
+  m_rot.x += y;
+}
+
+void FPSCamera::update(float timeDelta, const Uint8* keyStates)
+{
+  glm::mat4 camRotX = glm::rotate(glm::mat4(), m_rot.x * m_camSensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
+  glm::mat4 camRotY = glm::rotate(glm::mat4(), m_rot.y * m_camSensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
+  glm::mat4 camRot = camRotX * camRotY;
+
+  m_forward = glm::vec3(0.0f, 0.0f, -1.0f) * glm::mat3(camRot);
+  m_left = glm::vec3(-1.0f, 0.0f, 0.0f) * glm::mat3(camRot);
+  m_up = glm::vec3(0.0f, 1.0f, 0.0f) * glm::mat3(camRot);
+
+  if (keyStates[SDL_SCANCODE_W]) {
+    m_pos += m_forward * m_camSpeed;
+  }
+  if (keyStates[SDL_SCANCODE_S]) {
+    m_pos -= m_forward * m_camSpeed;
+  }
+  if (keyStates[SDL_SCANCODE_A]) {
+    m_pos += m_left * m_camSpeed;
+  }
+  if (keyStates[SDL_SCANCODE_D]) {
+    m_pos -= m_left * m_camSpeed;
+  }
+  if (keyStates[SDL_SCANCODE_E]) {
+    m_pos += m_up * m_camSpeed;
+  }
+  if (keyStates[SDL_SCANCODE_Q]) {
+    m_pos -= m_up * m_camSpeed;
+  }
+
+  m_proj = glm::perspective(3.141f / 2.0f, 1.0f, 0.001f, 50.0f);
+  m_view = camRot * glm::translate(glm::mat4(), -m_pos);
+}
+
 Demo::Demo()
   : m_running(true)
 {
+  m_camera = std::make_shared<FPSCamera>();
+  m_camera->m_camSpeed = 0.01f;
+  m_camera->m_camSensitivity = 0.001f;
+  m_camera->m_pos.z = 3.0f;
+
   m_shader = Shader("res/basic.glsl");
 
   m_scenegraph = std::make_shared<AssemblyNode>();
@@ -222,6 +300,7 @@ void Demo::input(const SDL_Event* evt)
   if (evt->type == SDL_MOUSEMOTION) {
     camY += evt->motion.xrel;
     camX += evt->motion.yrel;
+    m_camera->mouseMove(evt->motion.xrel, evt->motion.yrel);
   }
 }
 
@@ -230,21 +309,18 @@ void Demo::render(Window* window)
   static float x = 0.0f;
   x += SDL_GetTicks() / 1000.0f;
 
+  auto* keyStates = SDL_GetKeyboardState(nullptr);
+
+  // Update camera
+  m_camera->update(0.016f, keyStates);
+
+  // Rotate buddha
   float scale = 2.0f + float(sin(x*0.001f));
-  //m_buddha->m_scale = glm::vec3(scale);
   m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
   m_buddha->m_rot = glm::rotate(m_buddha->m_rot, scale, glm::vec3(0.0f, 1.0f, 0.0f));
   m_buddha->dirtyLocal();
 
-  printf("scale: %f\n", scale);
-
-  auto* keyStates = SDL_GetKeyboardState(nullptr);
-
-  float camSensitivity = 0.001f;
-  
-  static float rotation = 0.0f;
-  //rotation += 0.01f;
-
+  // Start render
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -253,50 +329,14 @@ void Demo::render(Window* window)
 
   glPolygonMode(GL_FRONT, GL_LINE);
 
-  glm::mat4 camRotX = glm::rotate(glm::mat4(), camX * camSensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
-  glm::mat4 camRotY = glm::rotate(glm::mat4(), camY * camSensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
-  glm::mat4 camRot = camRotX * camRotY;
-  glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f) * glm::mat3(camRot);
-  glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f) * glm::mat3(camRot);
-  glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f) * glm::mat3(camRot);
-  static glm::vec3 camPos(0.0f, 0.0f, 3.0f);
-
-  float distToOrigin = glm::length(camPos);
-
-  const float sens = 0.018f * glm::clamp(distToOrigin - 1.0f, 0.0f, 1.0f);
-  if (keyStates[SDL_SCANCODE_W]) {
-    camPos += forward * sens;
-  }
-  if (keyStates[SDL_SCANCODE_S]) {
-    camPos -= forward * sens;
-  }
-  if (keyStates[SDL_SCANCODE_A]) {
-    camPos -= right * sens;
-  }
-  if (keyStates[SDL_SCANCODE_D]) {
-    camPos += right * sens;
-  }
-  if (keyStates[SDL_SCANCODE_E]) {
-    camPos += up * sens;
-  }
-  if (keyStates[SDL_SCANCODE_Q]) {
-    camPos -= up * sens;
-  }
-
-  glm::mat4 proj = glm::perspective(3.141f / 2.0f, 1.0f, 0.001f, 50.0f);
-  glm::mat4 trans = glm::translate(glm::mat4(), -camPos);
-  glm::mat4 rot = glm::rotate(glm::mat4(), rotation, glm::vec3(0.0f, 1.0f, 0.0f));
-  glm::mat4 m = rot;
-  glm::mat4 v = camRot * trans;
-  glm::mat4 mvp = proj * v * m;
+  glm::mat4 mvp = m_camera->projMat() * m_camera->viewMat() * m;
 
   glLoadMatrixf(&mvp[0][0]);
 
-  glm::vec3 center = (glm::inverse(m) * glm::vec4(camPos, 1.0f));
-
-  float lod = 1.0f - glm::clamp(distToOrigin / 10.0f, 0.01f, 1.0f);
+  //glm::vec3 center = (glm::inverse(m) * glm::vec4(camPos, 1.0f));
+  glm::vec3 center = glm::vec4(m_camera->m_pos, 1.0f);
 
   renderGlobe(center, 1.0f);
 
-  //m_scenegraph->draw(m_shader.value(), proj, v);
+  m_scenegraph->draw(m_shader.value(), m_camera->projMat(), m_camera->viewMat());
 }

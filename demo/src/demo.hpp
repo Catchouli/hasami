@@ -16,6 +16,7 @@
 
 class SceneNode;
 class AssemblyNode;
+class FPSCamera;
 
 class Demo : public App
 {
@@ -28,6 +29,8 @@ public:
 
 private:
   bool m_running;
+
+  std::shared_ptr<FPSCamera> m_camera;
 
   std::optional<Shader> m_shader;
 
