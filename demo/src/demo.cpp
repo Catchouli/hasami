@@ -170,7 +170,7 @@ void subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const
     return;
   }
 
-  if (dist > ratio * size || size < minsize) {
+  if (true || dist > ratio * size || size < minsize) {
     renderTriangle(a, b, c);
     return;
   }
@@ -251,7 +251,7 @@ void Demo::render(Window* window)
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
 
-  //glPolygonMode(GL_FRONT, GL_LINE);
+  glPolygonMode(GL_FRONT, GL_LINE);
 
   glm::mat4 camRotX = glm::rotate(glm::mat4(), camX * camSensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
   glm::mat4 camRotY = glm::rotate(glm::mat4(), camY * camSensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -296,5 +296,7 @@ void Demo::render(Window* window)
 
   float lod = 1.0f - glm::clamp(distToOrigin / 10.0f, 0.01f, 1.0f);
 
-  m_scenegraph->draw(m_shader.value(), proj, v);
+  renderGlobe(center, 1.0f);
+
+  //m_scenegraph->draw(m_shader.value(), proj, v);
 }

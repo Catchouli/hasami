@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "mesh.hpp"
 #include "shader.hpp"
 
@@ -66,7 +68,10 @@ void Mesh::draw(const Shader& shader, const glm::mat4& projection, const glm::ma
 
 void Mesh::loadObj(const char* path)
 {
-  struct Vertex { glm::vec3 pos; glm::vec3 nrm; glm::vec2 texCoord; };
+  std::string cache = std::string(path) + ".cache";
+
+  if (loadCachedObj(cache.c_str()))
+    return;
 
   // Structures
   tinyobj::attrib_t attrib;
@@ -128,4 +133,112 @@ void Mesh::loadObj(const char* path)
   m_attrib.push_back(Attrib("pos", 3, GL_FLOAT));
   m_attrib.push_back(Attrib("nrm", 3, GL_FLOAT));
   m_attrib.push_back(Attrib("uv", 2, GL_FLOAT));
+
+  // Write cache out
+  writeCachedObj(cache.c_str(), vertexBuf, m_attrib);
+}
+
+bool Mesh::loadCachedObj(const char* path)
+{
+  const int version = 1;
+
+  FILE* fd = fopen(path, "rb");
+  if (!fd) {
+    return false;
+  }
+
+  int vers = -1;
+  fread(&vers, sizeof(int), 1, fd);
+  if (vers != version) {
+    fclose(fd);
+    return false;
+  }
+
+  int vbufSize = -1;
+  fread(&vbufSize, sizeof(int), 1, fd);
+
+  std::vector<Vertex> vbuf;
+  for (int i = 0; i < vbufSize; ++i) {
+    Vertex v;
+    fread(&v, sizeof(Vertex), 1, fd);
+    vbuf.push_back(v);
+  }
+
+  m_buf.set((float*)vbuf.data(), (GLsizei)vbuf.size()*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), GL_STATIC_DRAW);
+
+  int attribSize = -1;
+  fread(&attribSize, sizeof(int), 1, fd);
+
+  for (int i = 0; i < attribSize; ++i) {
+    int nameSize;
+    fread(&nameSize, sizeof(int), 1, fd);
+    char* buf = (char*)calloc(1, nameSize+1);
+    fread(buf, 1, nameSize, fd);
+    std::string name = buf;
+    free(buf);
+
+    bool hasOffset;
+    fread(&hasOffset, sizeof(bool), 1, fd);
+
+    int offset;
+    fread(&offset, sizeof(int), 1, fd);
+
+    GLint size;
+    fread(&size, sizeof(GLint), 1, fd);
+
+    GLenum type;
+    fread(&type, sizeof(GLenum), 1, fd);
+
+    m_attrib.push_back(Attrib(name, size, type, hasOffset ? offset : std::optional<int>()));
+  }
+
+  fclose(fd);
+  return true;
+}
+
+void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs)
+{
+  const int version = 1;
+
+  FILE* fd = fopen(path, "wb");
+  if (!fd) {
+    return;
+  }
+
+  fwrite(&version, sizeof(int), 1, fd);
+
+  int vbufSize = (int)vbuf.size();
+  fwrite(&vbufSize, sizeof(int), 1, fd);
+
+  for (const auto& vert : vbuf) {
+    fwrite(&vert, sizeof(Vertex), 1, fd);
+    /*fwrite(&vert.pos[0], sizeof(float), 1, fd);
+    fwrite(&vert.pos[1], sizeof(float), 1, fd);
+    fwrite(&vert.pos[2], sizeof(float), 1, fd);
+    fwrite(&vert.nrm[0], sizeof(float), 1, fd);
+    fwrite(&vert.nrm[1], sizeof(float), 1, fd);
+    fwrite(&vert.nrm[2], sizeof(float), 1, fd);
+    fwrite(&vert.texCoord[0], sizeof(float), 1, fd);
+    fwrite(&vert.texCoord[1], sizeof(float), 1, fd);*/
+  }
+
+  int attribSize = (int)attribs.size();
+  fwrite(&attribSize, sizeof(int), 1, fd);
+
+  for (const auto& attrib : attribs) {
+    int nameSize = (int)attrib.name.size();
+    fwrite(&nameSize, sizeof(int), 1, fd);
+    fwrite(attrib.name.data(), nameSize, 1, fd);
+
+    bool hasOffset = attrib.offset.has_value();
+    fwrite(&hasOffset, sizeof(bool), 1, fd);
+
+    int offset = hasOffset ? attrib.offset.value() : -1;
+    fwrite(&offset, sizeof(int), 1, fd);
+
+    fwrite(&attrib.size, sizeof(GLint), 1, fd);
+    fwrite(&attrib.type, sizeof(GLenum), 1, fd);
+  }
+
+  fclose(fd);
 }

@@ -18,11 +18,19 @@ struct Attrib {
   std::optional<int> offset;
 };
 
+struct Vertex {
+  glm::vec3 pos;
+  glm::vec3 nrm;
+  glm::vec2 texCoord;
+};
+
 class Mesh
 {
 public:
   Mesh();
   void loadObj(const char* path);
+  bool loadCachedObj(const char* path);
+  void writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs);
   void draw(const Shader& shader, const glm::mat4& projection, const glm::mat4& modelview);
 
   Buffer<float> m_buf;
