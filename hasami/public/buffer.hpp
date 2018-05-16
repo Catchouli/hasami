@@ -50,6 +50,9 @@ void Buffer<T>::set(const std::vector<T>& buf, GLsizei stride, GLenum usage)
 template <typename T>
 void Buffer<T>::set(const T* buf, GLsizei size, GLsizei stride, GLenum usage)
 {
+  if (size <= 0)
+    return;
+
   bind(GL_ARRAY_BUFFER);
   glBufferData(GL_ARRAY_BUFFER, size * sizeof(T), buf, usage);
   m_size = size;

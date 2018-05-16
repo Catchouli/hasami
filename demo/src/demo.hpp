@@ -5,6 +5,7 @@
 #include "window.hpp"
 #include "shader.hpp"
 #include "mesh.hpp"
+#include "scenegraph.hpp"
 
 #include "glm.hpp"
 
@@ -36,6 +37,7 @@ private:
 
   std::shared_ptr<SceneNode> m_scenegraph;
   std::shared_ptr<AssemblyNode> m_buddha;
+  std::shared_ptr<AssemblyNode> m_globe;
 
   Buffer<float> m_buff;
   GLuint m_buf;
