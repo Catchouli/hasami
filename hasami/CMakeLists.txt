@@ -15,7 +15,7 @@ add_library(hasami
   private/shader.cpp
   private/mesh.cpp
   private/scenegraph.cpp
-  public/globe.cpp
+  private/globe.cpp
 )
 
 target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader)

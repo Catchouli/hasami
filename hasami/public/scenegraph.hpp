@@ -1,6 +1,10 @@
+#pragma once
+
 #include <set>
 #include <memory>
 #include <math.h>
+#include "shader.hpp"
+#include "mesh.hpp"
 
 #include "glm.hpp"
 #include "gtc/matrix_transform.hpp"
