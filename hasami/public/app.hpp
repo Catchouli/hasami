@@ -1,7 +1,10 @@
 #pragma once
 
-class Window;
 union SDL_Event;
+
+namespace hs {
+
+class Window;
 
 class App {
 public:
@@ -9,3 +12,5 @@ public:
   virtual bool running() = 0;
   virtual void input(const SDL_Event* evt) = 0;
 };
+
+}

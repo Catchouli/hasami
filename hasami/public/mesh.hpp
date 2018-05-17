@@ -1,20 +1,23 @@
 #pragma once
 
-#include "buffer.hpp"
-#include "shader.hpp"
+#include "gl/buffer.hpp"
+#include "gl/shader.hpp"
 
 #include <vector>
+#include <matrix.hpp>
 #include "optional.hpp"
-#include "glad/glad.h"
-#include "glm.hpp"
+
+namespace hs {
 
 struct Attrib {
-  Attrib(std::string name, GLint size, GLenum type, std::optional<int> offset = std::optional<int>())
+  enum class Type { Float };
+
+  Attrib(std::string name, size_t size, Type type, std::optional<int> offset = std::optional<int>())
     : name(name), size(size), type(type), offset(offset) {}
 
   std::string name;
-  GLint size;
-  GLenum type;
+  size_t size;
+  Type type;
   std::optional<int> offset;
 };
 
@@ -31,8 +34,10 @@ public:
   void loadObj(const char* path);
   bool loadCachedObj(const char* path);
   void writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs);
-  void draw(const Shader& shader, const glm::mat4& projection, const glm::mat4& modelview);
+  void draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview);
 
   Buffer<float> m_buf;
   std::vector<Attrib> m_attrib;
 };
+
+}

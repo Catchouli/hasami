@@ -1,103 +1,19 @@
 #include "demo.hpp"
-
 #include "globe.hpp"
 
-#include "glad/glad.h"
-#include <stdio.h>
-#include <fstream>
-#include <sstream>
-#include "glm.hpp"
-#include "gtc/matrix_transform.hpp"
-#include "gtc/quaternion.hpp"
-#include "gtx/quaternion.hpp"
-#include "globe.hpp"
-
-#include <set>
-#include <memory>
-#include <math.h>
-
-class FPSCamera
-{
-public:
-  FPSCamera();
-  void mouseMove(int x, int y);
-  void update(float timeDelta, const Uint8* keyStates);
-
-  const glm::mat4& projMat() { return m_proj; }
-  const glm::mat4& viewMat() { return m_view; }
-
-  float m_camSpeed;
-  float m_camSensitivity;
-
-  glm::vec3 m_pos;
-  glm::vec2 m_rot;
-
-private:
-  glm::mat4 m_proj;
-  glm::mat4 m_view;
-
-  glm::vec3 m_forward;
-  glm::vec3 m_left;
-  glm::vec3 m_up;
-};
-
-FPSCamera::FPSCamera()
-  : m_forward(0.0, 0.0, -1.0)
-  , m_left(-1.0, 0.0, 0.0)
-  , m_up(0.0, 1.0, 0.0)
-  , m_camSpeed(1.0f)
-  , m_camSensitivity(1.0f)
-{
-}
-
-void FPSCamera::mouseMove(int x, int y)
-{
-  m_rot.y += x;
-  m_rot.x += y;
-}
-
-void FPSCamera::update(float timeDelta, const Uint8* keyStates)
-{
-  glm::mat4 camRotX = glm::rotate(glm::mat4(), m_rot.x * m_camSensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
-  glm::mat4 camRotY = glm::rotate(glm::mat4(), m_rot.y * m_camSensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
-  glm::mat4 camRot = camRotX * camRotY;
-
-  m_forward = glm::vec3(0.0f, 0.0f, -1.0f) * glm::mat3(camRot);
-  m_left = glm::vec3(-1.0f, 0.0f, 0.0f) * glm::mat3(camRot);
-  m_up = glm::vec3(0.0f, 1.0f, 0.0f) * glm::mat3(camRot);
-
-  if (keyStates[SDL_SCANCODE_W]) {
-    m_pos += m_forward * m_camSpeed;
-  }
-  if (keyStates[SDL_SCANCODE_S]) {
-    m_pos -= m_forward * m_camSpeed;
-  }
-  if (keyStates[SDL_SCANCODE_A]) {
-    m_pos += m_left * m_camSpeed;
-  }
-  if (keyStates[SDL_SCANCODE_D]) {
-    m_pos -= m_left * m_camSpeed;
-  }
-  if (keyStates[SDL_SCANCODE_E]) {
-    m_pos += m_up * m_camSpeed;
-  }
-  if (keyStates[SDL_SCANCODE_Q]) {
-    m_pos -= m_up * m_camSpeed;
-  }
-
-  m_proj = glm::perspective(3.141f / 2.0f, 1.0f, 0.001f, 50.0f);
-  m_view = camRot * glm::translate(glm::mat4(), -m_pos);
-}
+#include "SDL.h"
 
 Demo::Demo()
   : m_running(true)
 {
+  using namespace hs;
+
   m_camera = std::make_shared<FPSCamera>();
   m_camera->m_camSpeed = 0.01f;
   m_camera->m_camSensitivity = 0.001f;
   m_camera->m_pos.z = 3.0f;
 
-  m_shader = Shader("res/basic.glsl");
+  m_shader = gl::Shader("res/basic.glsl");
 
   m_scenegraph = std::make_shared<AssemblyNode>();
 
@@ -123,7 +39,7 @@ void Demo::input(const SDL_Event* evt)
   }
 }
 
-void Demo::render(Window* window)
+void Demo::render(hs::Window* window)
 {
   static float x = 0.0f;
   x += SDL_GetTicks() / 1000.0f;

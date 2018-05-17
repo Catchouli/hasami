@@ -3,6 +3,9 @@
 #include "glad/glad.h"
 #include <vector>
 
+namespace hs {
+namespace gl {
+
 template <typename T>
 class Buffer {
 public:
@@ -63,4 +66,7 @@ template <typename T>
 void Buffer<T>::bind(GLenum target)
 {
   glBindBuffer(target, m_buf);
+}
+
+}
 }

@@ -2,17 +2,23 @@
 
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
+#include "renderer.hpp"
 
+namespace hs {
 class App;
+}
 
-class Window {
+namespace hs {
+namespace sdl {
+
+class Window : public hs::Window {
 public:
   Window(App* app = nullptr);
   ~Window();
 
-  void setApp(App* app) { m_app = app; }
+  void setApp(App* app) override { m_app = app; }
 
-  void run();
+  void run() override;
 
 private:
   SDL_Window* m_win;
@@ -21,3 +27,6 @@ private:
 
   App* m_app;
 };
+
+}
+}

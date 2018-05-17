@@ -2,11 +2,13 @@
 
 #include "scenegraph.hpp"
 
+namespace hs {
+
 class GlobeNode
   : public ModelNode
 {
 public:
-  virtual void draw(const Shader& shader, const glm::mat4& projection, const glm::mat4& view) override;
+  virtual void draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& view) override;
 
 private:
   void generate(const glm::vec3& center);
@@ -15,3 +17,5 @@ private:
 
   std::vector<Vertex> m_vert;
 };
+
+}

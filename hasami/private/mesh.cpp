@@ -1,10 +1,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "mesh.hpp"
-#include "shader.hpp"
+#include "gl/shader.hpp"
 
 #include "glm.hpp"
 #include "tiny_obj_loader.h"
+
+namespace hs {
 
 int glSize(GLenum type) {
   switch (type) {
@@ -17,8 +19,16 @@ int glSize(GLenum type) {
     case GL_HALF_FLOAT: return 2;
     case GL_FLOAT: return 4;
     case GL_DOUBLE: return 8;
-    default: return 0;
+    default: assert(false); return 0;
   }
+}
+
+GLenum glType(Attrib::Type type) {
+  switch (type) {
+    case Attrib::Type::Float: return GL_FLOAT;
+    default: assert(false); return static_cast<GLenum>(-1);
+  }
+  assert(false);
 }
 
 Mesh::Mesh()
@@ -26,7 +36,7 @@ Mesh::Mesh()
 
 }
 
-void Mesh::draw(const Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void Mesh::draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
   glm::mat4 mvp = projection * modelview;
 
@@ -49,11 +59,13 @@ void Mesh::draw(const Shader& shader, const glm::mat4& projection, const glm::ma
     const auto loc = glGetAttribLocation(prog, m_attrib[i].name.c_str());
     locations.push_back(loc);
 
+    GLenum type = glType(attr.type);
+
     size_t offset = (attr.offset.has_value() ? attr.offset.value() : lastOffset);
-    lastOffset = offset + attr.size * glSize(attr.type);
+    lastOffset = offset + attr.size * glSize(type);
 
     glEnableVertexAttribArray(loc);
-    glVertexAttribPointer(loc, attr.size, attr.type, false, m_buf.stride(), (void*)offset);
+    glVertexAttribPointer(loc, static_cast<GLint>(attr.size), type, false, m_buf.stride(), (void*)offset);
   }
 
   // Draw buffer
@@ -130,9 +142,9 @@ void Mesh::loadObj(const char* path)
 
   // Store attributes
   m_attrib.clear();
-  m_attrib.push_back(Attrib("pos", 3, GL_FLOAT));
-  m_attrib.push_back(Attrib("nrm", 3, GL_FLOAT));
-  m_attrib.push_back(Attrib("uv", 2, GL_FLOAT));
+  m_attrib.push_back(Attrib("pos", 3, Attrib::Type::Float));
+  m_attrib.push_back(Attrib("nrm", 3, Attrib::Type::Float));
+  m_attrib.push_back(Attrib("uv", 2, Attrib::Type::Float));
 
   // Write cache out
   writeCachedObj(cache.c_str(), vertexBuf, m_attrib);
@@ -140,7 +152,7 @@ void Mesh::loadObj(const char* path)
 
 bool Mesh::loadCachedObj(const char* path)
 {
-  const int version = 1;
+  const int version = 2;
 
   FILE* fd = fopen(path, "rb");
   if (!fd) {
@@ -186,10 +198,10 @@ bool Mesh::loadCachedObj(const char* path)
     GLint size;
     fread(&size, sizeof(GLint), 1, fd);
 
-    GLenum type;
-    fread(&type, sizeof(GLenum), 1, fd);
+    int type;
+    fread(&type, sizeof(int), 1, fd);
 
-    m_attrib.push_back(Attrib(name, size, type, hasOffset ? offset : std::optional<int>()));
+    m_attrib.push_back(Attrib(name, size, static_cast<Attrib::Type>(type), hasOffset ? offset : std::optional<int>()));
   }
 
   fclose(fd);
@@ -198,7 +210,7 @@ bool Mesh::loadCachedObj(const char* path)
 
 void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs)
 {
-  const int version = 1;
+  const int version = 2;
 
   FILE* fd = fopen(path, "wb");
   if (!fd) {
@@ -229,8 +241,12 @@ void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, con
     fwrite(&offset, sizeof(int), 1, fd);
 
     fwrite(&attrib.size, sizeof(GLint), 1, fd);
-    fwrite(&attrib.type, sizeof(GLenum), 1, fd);
+
+    int type = static_cast<int>(attrib.type);
+    fwrite(&type, sizeof(int), 1, fd);
   }
 
   fclose(fd);
+}
+
 }

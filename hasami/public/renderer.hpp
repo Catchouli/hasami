@@ -1,19 +1,33 @@
 #pragma once
 
-void test();
 
-namespace hs
+namespace hs {
+
+class App;
+
+class Window
 {
-  class Renderer;
+public:
+  virtual ~Window() {}
 
-  class Window
-  {
-    virtual ~Window() {}
-    virtual Renderer* getRenderer() = 0;
-  };
+  virtual void setApp(App* app) = 0;
+  virtual void run() = 0;
+};
 
-  class Renderer
-  {
-    virtual ~Renderer() {}
-  };
+class Renderer
+{
+public:
+  virtual ~Renderer() {}
+};
+
+class RendererComponent
+{
+public:
+  Renderer* renderer() const { return m_renderer; }
+
+private:
+  friend class Renderer;
+  Renderer* m_renderer;
+};
+
 }

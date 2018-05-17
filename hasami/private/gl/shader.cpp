@@ -1,8 +1,11 @@
-#include "shader.hpp"
+#include "gl/shader.hpp"
 
 #include <stdio.h>
 #include <fstream>
 #include <sstream>
+
+namespace hs {
+namespace gl {
 
 Shader::Shader(const char* srcPath) {
   load(srcPath);
@@ -65,4 +68,7 @@ void Shader::load(const char* srcPath) {
     glGetProgramInfoLog(m_prog, 1024, &logLen, msg);
     fprintf(stderr, "Failed to link program: %s\n", msg);
   }
+}
+
+}
 }

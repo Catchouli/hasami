@@ -1,6 +1,8 @@
 #include "globe.hpp"
 
-void GlobeNode::draw(const Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+namespace hs {
+
+void GlobeNode::draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
   generate(glm::vec3(0.0f, 0.0f, 3.0f));
   //ModelNode::draw(shader, projection, modelview);
@@ -15,9 +17,9 @@ void GlobeNode::generate(const glm::vec3& center)
     m_mesh = std::make_shared<Mesh>();
 
   m_mesh->m_attrib.clear();
-  m_mesh->m_attrib.push_back(Attrib("pos", 3, GL_FLOAT));
-  m_mesh->m_attrib.push_back(Attrib("nrm", 3, GL_FLOAT));
-  m_mesh->m_attrib.push_back(Attrib("uvs", 2, GL_FLOAT));
+  m_mesh->m_attrib.push_back(Attrib("pos", 3, Attrib::Type::Float));
+  m_mesh->m_attrib.push_back(Attrib("nrm", 3, Attrib::Type::Float));
+  m_mesh->m_attrib.push_back(Attrib("uvs", 2, Attrib::Type::Float));
 
   m_mesh->m_buf.set((float*)m_vert.data(), (GLsizei)m_vert.size()*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), GL_STATIC_DRAW);
 }
@@ -81,4 +83,6 @@ void GlobeNode::generateGlobe(const glm::vec3& center)
                , center
                , 1.0f);
     }
+}
+
 }

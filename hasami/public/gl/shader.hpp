@@ -2,6 +2,9 @@
 
 #include "glad/glad.h"
 
+namespace hs {
+namespace gl {
+
 class Shader
 {
 public:
@@ -14,3 +17,6 @@ public:
 private:
   GLuint m_prog;
 };
+
+}
+}

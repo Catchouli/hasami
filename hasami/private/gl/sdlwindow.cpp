@@ -1,8 +1,11 @@
-#include "window.hpp"
+#include "gl/sdlwindow.hpp"
 #include "app.hpp"
 #include "SDL.h"
 #include <stdio.h>
 #include "glad/glad.h"
+
+namespace hs {
+namespace sdl {
 
 Window::Window(App* app)
   : m_app(app)
@@ -52,4 +55,7 @@ void Window::run()
       SDL_GL_SwapWindow(m_win);
     }
   }
+}
+
+}
 }
