@@ -36,7 +36,7 @@ public:
   void writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs);
   void draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview);
 
-  Buffer<float> m_buf;
+  gl::Buffer<float> m_buf;
   std::vector<Attrib> m_attrib;
 };
 

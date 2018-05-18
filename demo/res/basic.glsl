@@ -1,19 +1,21 @@
-#extension GL_ARB_explicit_uniform_location : enable
+uniform ViewSettings {
+  mat4 test;
+};
+
+uniform mat4 mv;
+uniform mat4 mvp;
 
 #ifdef BUILDING_VERTEX_SHADER
 
 in vec3 pos;
 in vec3 nrm;
 
-uniform mat4 mv;
-uniform mat4 mvp;
-
 out vec3 var_nrm;
 
 void main()
 {
   gl_Position = mvp * vec4(pos, 1.0);
-  var_nrm = normalize(mat3(mv) * nrm);
+  var_nrm = normalize(mat3(mv) * nrm) * mat3(test);
 }
 
 #endif

@@ -28,8 +28,4 @@ private:
   std::shared_ptr<hs::SceneNode> m_scenegraph;
   std::shared_ptr<hs::AssemblyNode> m_buddha;
   std::shared_ptr<hs::AssemblyNode> m_globe;
-
-  hs::Buffer<float> m_buff;
-  GLuint m_buf;
-  GLsizei m_bufSize;
 };
