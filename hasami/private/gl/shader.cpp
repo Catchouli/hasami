@@ -117,20 +117,23 @@ void Shader::readUniforms()
   }
 
   // get uniform blocks
-  GLuint indices[bufSize];
-  GLint offset[bufSize];
-
   glGetProgramiv(m_prog, GL_ACTIVE_UNIFORM_BLOCKS, &count);
   
   m_uniformBlocks.clear();
   for (i = 0; i < count; i++) {
     glGetActiveUniformBlockName(m_prog, i, bufSize, &length, name);
-    glGetUniformIndices(m_prog, 4, names, indices);
     m_uniformBlocks[name] = i;
-    //glGetActiveUniformBlockiv(m_prog, i, )
   }
+}
 
-  int j = 9;
+void Shader::bind()
+{
+  glUseProgram(m_prog);
+}
+
+void Shader::flush()
+{
+
 }
 
 }

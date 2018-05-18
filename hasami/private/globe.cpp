@@ -2,7 +2,7 @@
 
 namespace hs {
 
-void GlobeNode::draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void GlobeNode::draw(gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
   generate(glm::vec3(0.0f, 0.0f, 3.0f));
   //ModelNode::draw(shader, projection, modelview);
@@ -40,7 +40,7 @@ void GlobeNode::subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec
   if (true || dist > ratio * size || size < minsize) {
     // Calc normal
 
-    glm::vec3 nrm = -glm::normalize(glm::cross(b - a, c - a));
+    glm::vec3 nrm = glm::normalize(glm::cross(b - a, c - a));
     m_vert.push_back({a, nrm, glm::vec2(0.0f)});
     m_vert.push_back({b, nrm, glm::vec2(0.0f)});
     m_vert.push_back({c, nrm, glm::vec2(0.0f)});

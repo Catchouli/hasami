@@ -36,19 +36,20 @@ Mesh::Mesh()
 
 }
 
-void Mesh::draw(const gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void Mesh::draw(gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
   glm::mat4 mvp = projection * modelview;
 
   // Bind shader
+  shader.bind();
+
   auto prog = shader.prog();
-  glUseProgram(prog);
 
   // Uniforms
-  auto loc = glGetUniformLocation(prog, "mv");
+  auto loc = glGetUniformLocation(prog, "_mv");
   glUniformMatrix4fv(loc, 1, GL_FALSE, &modelview[0][0]);
 
-  loc = glGetUniformLocation(prog, "mvp");
+  loc = glGetUniformLocation(prog, "_mvp");
   glUniformMatrix4fv(loc, 1, GL_FALSE, &mvp[0][0]);
 
   // Enable attributes
@@ -67,6 +68,9 @@ void Mesh::draw(const gl::Shader& shader, const glm::mat4& projection, const glm
     glEnableVertexAttribArray(loc);
     glVertexAttribPointer(loc, static_cast<GLint>(attr.size), type, false, m_buf.stride(), (void*)offset);
   }
+
+  // Flush uniforms
+  shader.flush();
 
   // Draw buffer
   m_buf.bind(GL_ARRAY_BUFFER);
@@ -133,7 +137,7 @@ void Mesh::loadObj(const char* path)
     auto& b = vertexBuf[i*3+1];
     auto& c = vertexBuf[i*3+2];
 
-    glm::vec3 nrm = -glm::normalize(glm::cross(b.pos - a.pos, c.pos - a.pos));
+    glm::vec3 nrm = glm::normalize(glm::cross(b.pos - a.pos, c.pos - a.pos));
     a.nrm = b.nrm = c.nrm = nrm;
   }
 

@@ -23,7 +23,7 @@ private:
 
   std::shared_ptr<hs::FPSCamera> m_camera;
 
-  std::optional<hs::gl::Shader> m_shader;
+  std::shared_ptr<hs::gl::Shader> m_shader;
 
   std::shared_ptr<hs::SceneNode> m_scenegraph;
   std::shared_ptr<hs::AssemblyNode> m_buddha;

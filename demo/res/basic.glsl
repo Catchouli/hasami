@@ -1,9 +1,10 @@
-uniform ViewSettings {
-  mat4 test;
+layout(std140) uniform ViewSettings {
+  mat4 mv;
+  mat4 mvp;
 };
 
-uniform mat4 mv;
-uniform mat4 mvp;
+uniform mat4 _mv;
+uniform mat4 _mvp;
 
 #ifdef BUILDING_VERTEX_SHADER
 
@@ -14,8 +15,8 @@ out vec3 var_nrm;
 
 void main()
 {
-  gl_Position = mvp * vec4(pos, 1.0);
-  var_nrm = normalize(mat3(mv) * nrm) * mat3(test);
+  gl_Position = _mvp * vec4(pos, 1.0);
+  var_nrm = normalize(mat3(_mv) * nrm);
 }
 
 #endif

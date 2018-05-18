@@ -1,7 +1,26 @@
 #include "demo.hpp"
 #include "globe.hpp"
+#include "gl/shader.hpp"
 
 #include "SDL.h"
+
+using hs::gl::ShaderVar;
+using hs::gl::VarRef;
+
+class BasicShader
+  : public hs::gl::Shader
+{
+public:
+  BasicShader()
+    : Shader("res/basic.glsl"
+      , VarRef("mv", _mv)
+      , VarRef("mvp", _mvp)
+      )
+  {}
+
+  ShaderVar<glm::mat4> _mv;
+  ShaderVar<glm::mat4> _mvp;
+};
 
 Demo::Demo()
   : m_running(true)
@@ -13,7 +32,8 @@ Demo::Demo()
   m_camera->m_camSensitivity = 0.001f;
   m_camera->m_pos.z = 3.0f;
 
-  m_shader = gl::Shader("res/basic.glsl");
+  //m_shader = gl::Shader("res/basic.glsl");
+  m_shader = std::make_shared<BasicShader>();
 
   m_scenegraph = std::make_shared<AssemblyNode>();
 
@@ -29,7 +49,7 @@ Demo::Demo()
   m_globe->setParent(m_scenegraph);
 
   auto globeModel = std::make_shared<GlobeNode>();
-  globeModel->setParent(m_globe);
+  //globeModel->setParent(m_globe);
 }
 
 void Demo::input(const SDL_Event* evt)
@@ -52,7 +72,7 @@ void Demo::render(hs::Window* window)
   // Rotate buddha
   float scale = 2.0f + float(sin(x*0.001f));
   m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
-  m_buddha->m_rot = glm::rotate(m_buddha->m_rot, scale, glm::vec3(0.0f, 1.0f, 0.0f));
+  //m_buddha->m_rot = glm::rotate(m_buddha->m_rot, scale, glm::vec3(0.0f, 1.0f, 0.0f));
   m_buddha->dirtyLocal();
 
   // Start render
@@ -64,5 +84,6 @@ void Demo::render(hs::Window* window)
 
   //glPolygonMode(GL_FRONT, GL_LINE);
 
-  m_scenegraph->draw(m_shader.value(), m_camera->projMat(), m_camera->viewMat());
+  if (m_shader)
+    m_scenegraph->draw(*m_shader, m_camera->projMat(), m_camera->viewMat());
 }
