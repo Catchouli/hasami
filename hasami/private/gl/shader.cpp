@@ -133,7 +133,23 @@ void Shader::bind()
 
 void Shader::flush()
 {
+  bind();
 
+  if (m_varsDirty) {
+    m_varsDirty = false;
+
+    for (auto& var : m_shaderVars) {
+      if (var.second->dirty()) {
+        const int loc = glGetUniformLocation(m_prog, var.first.c_str());
+        const int size = var.second->size();
+
+        switch (var.second->type()) {
+          case ShaderVarBase::Type::Mat4: glUniformMatrix4fv(loc, 1, GL_FALSE, static_cast<float*>(var.second->buf())); break;
+          case ShaderVarBase::Type::Unknown: assert(false); break;
+        }
+      }
+    }
+  }
 }
 
 }

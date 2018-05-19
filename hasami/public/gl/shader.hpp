@@ -1,67 +1,14 @@
 #pragma once
 
+#include "renderer.hpp"
 #include "glad/glad.h"
 #include <map>
 #include <tuple>
 #include <functional>
+#include <typeindex>
 
 namespace hs {
 namespace gl {
-
-class ShaderVarBase
-{
-  /// Buffer containing the shader var
-  virtual void* buf() = 0;
-
-  /// Size of the shader var
-  virtual int size() = 0;
-
-  /// Alignment of the shader var
-  virtual int alignment() = 0;
-
-  /// Called (if set) when the value changes
-  std::function<void(ShaderVarBase&)> Dirty;
-};
-
-template <typename T>
-class ShaderVar
-  : public ShaderVarBase
-{
-public:
-  /// Set the value of the shadervar
-  void set(const T& value) { m_value = value; setDirty(); }
-
-  /// Get the value of the shadervar
-  const T& get() const { return m_value; }
-
-  /// Clears the dirty flag
-  void clearDirty() { m_dirty = false; }
-
-  /// Buffer containing the shader var
-  virtual void* buf() override { return &m_value; }
-
-  /// Size of the shader var
-  virtual int size() override { return 0; }
-
-  /// Alignment of the shader var
-  virtual int alignment() override { return 0; }
-
-private:
-  /// Sets the dirty flag
-  void setDirty() { m_dirty = true; }
-
-  /// The value of the shadervar
-  T m_value;
-
-  /// Set when the value changes
-  bool m_dirty;
-};
-
-template <typename T>
-using VarRefT = std::tuple<std::string, ShaderVar<T>&>;
-
-template <typename T>
-constexpr VarRefT<T> VarRef(const std::string& str, ShaderVar<T>& v) { return VarRefT<T>(str, v); }
 
 class Shader
 {
@@ -85,7 +32,15 @@ public:
   /// Get the program id (deprecated)
   GLuint prog() const { return m_prog; }
 
+  /// Get a typed shader var
+  template <typename T>
+  ShaderVar<T>* getShaderVar(const std::string& name);
+
+
 private:
+  /// Dirty our shader vars
+  void dirtyVars() { m_varsDirty = true; }
+
   /// Add shader vars (plumbing for addVar)
   void Shader::addVars() {}
   template <typename ShaderVar, typename... ShaderVars>
@@ -98,8 +53,12 @@ private:
   /// The shader program
   GLuint m_prog;
 
+  /// Whether any of our shader vars are dirty
+  bool m_varsDirty;
+
   /// Shader vars
-  std::map<std::string, ShaderVarBase&> m_shaderVars;
+  std::map<std::string, ShaderVarBase*> m_shaderVars;
+  std::map<std::type_index, std::map<std::string, void*>> m_typedShaderVars;
 
   /// Read all shader uniforms attributes etc ids and store them
   void readUniforms();
@@ -125,10 +84,21 @@ void Shader::addVars(VarRefT<ShaderVar> var, VarRefT<ShaderVars>... rest)
 template <typename ShaderVar>
 void Shader::addVar(VarRefT<ShaderVar> var)
 {
+  auto& typedMap = m_typedShaderVars[typeid(ShaderVar)];
   const std::string& name = std::get<0>(var);
-  const auto& shadervar = std::get<1>(var);
+  auto shaderVar = std::get<1>(var);
+  auto dirtyVars = std::bind(&Shader::dirtyVars, this);
+  m_shaderVars.insert(std::make_pair(name, shaderVar));
+  typedMap.insert(std::make_pair(name, shaderVar));
   printf("Adding shader var: %s\n", name.c_str());
-  m_shaderVars.insert(std::make_pair(name, shadervar));
+}
+
+template <typename T>
+ShaderVar<T>* Shader::getShaderVar(const std::string& name)
+{
+  auto& map = m_typedShaderVars[typeid(T)];
+  auto it = map.find(name);
+  return it != map.end() ? static_cast<ShaderVar<T>*>(it->second) : nullptr;
 }
 
 }

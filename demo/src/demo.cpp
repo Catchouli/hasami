@@ -1,26 +1,11 @@
 #include "demo.hpp"
 #include "globe.hpp"
+#include "scenegraph.hpp"
 #include "gl/shader.hpp"
 
 #include "SDL.h"
 
-using hs::gl::ShaderVar;
-using hs::gl::VarRef;
-
-class BasicShader
-  : public hs::gl::Shader
-{
-public:
-  BasicShader()
-    : Shader("res/basic.glsl"
-      , VarRef("mv", _mv)
-      , VarRef("mvp", _mvp)
-      )
-  {}
-
-  ShaderVar<glm::mat4> _mv;
-  ShaderVar<glm::mat4> _mvp;
-};
+#include <map>
 
 Demo::Demo()
   : m_running(true)

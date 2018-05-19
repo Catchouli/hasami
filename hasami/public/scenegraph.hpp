@@ -12,6 +12,21 @@
 
 namespace hs {
 
+class StandardShader
+  : public hs::gl::Shader
+{
+public:
+  StandardShader(const char* srcPath)
+    : Shader(srcPath
+      , VarRef("mv", _mv)
+      , VarRef("mvp", _mvp)
+      )
+  {}
+
+  ShaderVar<glm::mat4> _mv;
+  ShaderVar<glm::mat4> _mvp;
+};
+
 class SceneNode
   : public std::enable_shared_from_this<SceneNode>
 {
