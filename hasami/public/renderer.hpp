@@ -6,128 +6,140 @@
 #include <vec2.hpp>
 #include <vec3.hpp>
 #include <vec4.hpp>
+#include <vector>
+#include <variant.hpp>
+#include <map>
+#include <stack>
 
 namespace hs {
 
 class App;
 class Renderer;
+class Shader;
+class Buffer;
+class StateManager;
+
+enum class UniformType { Float, Mat4, Unknown };
+enum class AttribType { Float, Vec3, Vec4, Unknown };
+enum class PrimitiveType { Triangles };
+
+struct RenderState
+{
+  enum class State { ClearColor, DepthTest, CullFace, PolygonMode };
+  enum class PolygonMode { Point, Line, Fill };
+  using Value = std::variant<glm::vec4, bool, PolygonMode>;
+
+  State m_state;
+  Value m_val;
+};
+
+inline RenderState ClearColor() { return RenderState{RenderState::State::ClearColor}; };
+inline RenderState ClearColor(const glm::vec4& v) { return RenderState{RenderState::State::ClearColor, v}; };
+inline RenderState DepthTest() { return RenderState{RenderState::State::DepthTest}; };
+inline RenderState DepthTest(bool b) { return RenderState{RenderState::State::DepthTest, b}; };
+inline RenderState CullFace() { return RenderState{RenderState::State::CullFace}; };
+inline RenderState CullFace(bool b) { return RenderState{RenderState::State::CullFace, b}; };
+inline RenderState PolygonMode() { return RenderState{RenderState::State::PolygonMode}; };
+inline RenderState PolygonMode(RenderState::PolygonMode mode) { return RenderState{RenderState::State::PolygonMode, mode}; };
 
 class Window
 {
 public:
   virtual ~Window() {}
-
   virtual void setApp(App* app) = 0;
   virtual void run() = 0;
+  virtual Renderer* renderer() = 0;
 };
 
 class Renderer
 {
 public:
   virtual ~Renderer() {}
+  virtual Shader* createShader() = 0;
+  virtual Buffer* createBuffer() = 0;
+  virtual StateManager* stateManager() = 0;
+  virtual void clear(const glm::vec4& col, bool color, bool depth) = 0;
+  virtual void drawArrays(PrimitiveType prim, int start, int count) = 0;
+  virtual bool checkError() = 0;
 };
 
 class Shader
 {
 public:
+  virtual ~Shader() {}
+  virtual void load(const char* srcPath) = 0;
+  virtual void bind() = 0;
+  virtual void unbind() = 0;
+  virtual void addAttrib(const char* name, AttribType type) = 0;
+  virtual void bindAttrib(const char* name, int size, AttribType type, size_t stride, int offset) = 0;
+  virtual void unbindAttrib(const char* name) = 0;
+  virtual void addUniform(const char* name, UniformType type) = 0;
+  virtual void setUniform(const char* name, UniformType type, const void* buf) = 0;
 };
 
-class RendererComponent
-{
+class Buffer {
 public:
-  Renderer* renderer() const { return m_renderer; }
+  enum class Target { VertexBuffer };
+  enum class Usage { StaticDraw };
 
-private:
-  friend class Renderer;
-  Renderer* m_renderer;
-};
+  template <typename T>
+  void set(const std::vector<T>& buf, int stride, Usage usage);
 
-class ShaderVarBase
-{
-public:
-  enum class Type { Mat4, Unknown };
+  template <typename T>
+  void set(const T* buf, int size, int stride, Usage usage);
 
-  /// Buffer containing the shader var
-  virtual void* buf() = 0;
-
-  /// Size of the shader var
+  virtual void set(const void* buf, int size, int stride, Usage usage) = 0;
+  virtual void bind(Target target) = 0;
+  virtual int stride() = 0;
   virtual int size() = 0;
-
-  /// Alignment of the shader var
-  virtual int alignment() = 0;
-
-  /// Whether the var is dirty
-  bool dirty() const { return m_dirty; }
-
-  /// Clears the dirty flag
-  void clearDirty() { m_dirty = false; }
-
-  /// Get the type of this var
-  Type type() const { return m_type; }
-
-  /// Called (if set) when the value changes
-  std::function<void(ShaderVarBase&)> Dirty;
-
-protected:
-  /// Sets the dirty flag
-  void setDirty() { m_dirty = true; }
-
-  Type m_type = Type::Unknown;
-
-private:
-  /// Set when the value changes
-  bool m_dirty = false;
 };
 
 template <typename T>
-class ShaderVar
-  : public ShaderVarBase
+void Buffer::set(const std::vector<T>& buf, int stride, Usage usage)
+{
+  set((const void*)buf.data(), buf.size() * sizeof(T), stride, usage);
+}
+
+template <typename T>
+void Buffer::set(const T* buf, int size, int stride, Usage usage)
+{
+  set((const void*)buf, size * sizeof(T), stride, usage);
+}
+
+class StateManager
 {
 public:
-  /// Set the value of the shadervar
-  void set(const T& value) { m_value = value; setDirty(); }
+  void pushInitialStates(); //^ call from derived class
+  void pushState(RenderState renderState);
+  void popState(RenderState renderState);
 
-  /// Get the value of the shadervar
-  const T& get() const { return m_value; }
-
-  /// Buffer containing the shader var
-  virtual void* buf() override { return &m_value; }
-
-  /// Size of the shader var
-  virtual int size() override { return sizeof(T); }
-
-  /// Alignment of the shader var
-  virtual int alignment() override;
+  virtual void applyState(const RenderState& renderState) = 0;
 
 private:
-
-  /// The value of the shadervar
-  /// todo: default values for types
-  T m_value;
+  std::map<RenderState::State, std::stack<RenderState>> m_stacks;
 };
 
-template <typename T>
-int ShaderVar<T>::alignment()
+inline void StateManager::pushInitialStates()
 {
-  return 1;
+  pushState(DepthTest(false));
+  pushState(CullFace(false));
+  pushState(ClearColor(glm::vec4(0.0f)));
+  pushState(PolygonMode(RenderState::PolygonMode::Fill));
 }
 
-template <>
-inline int ShaderVar<glm::mat4>::alignment()
+inline void StateManager::pushState(RenderState renderState)
 {
-  return 4*4*sizeof(float);
+  auto& stack = m_stacks[renderState.m_state];
+  stack.push(renderState);
+  applyState(stack.top());
 }
 
-template <>
-inline int ShaderVar<glm::mat3>::alignment()
+inline void StateManager::popState(RenderState renderState)
 {
-  return 4*4*sizeof(float);
+  auto& stack = m_stacks[renderState.m_state];
+  stack.pop();
+  if (!stack.empty())
+    applyState(stack.top());
 }
-
-template <typename T>
-using VarRefT = std::tuple<std::string, ShaderVar<T>*>;
-
-template <typename T>
-constexpr VarRefT<T> VarRef(const std::string& str, ShaderVar<T>& v) { return VarRefT<T>(str, &v); }
 
 }

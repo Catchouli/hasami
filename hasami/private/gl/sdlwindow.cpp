@@ -2,7 +2,6 @@
 #include "app.hpp"
 #include "SDL.h"
 #include <stdio.h>
-#include "glad/glad.h"
 
 namespace hs {
 namespace sdl {
@@ -22,13 +21,10 @@ Window::Window(App* app)
 
   m_context = SDL_GL_CreateContext(m_win);
 
-  if (!gladLoadGL()) {
-    fprintf(stderr, "Glad (opengl) failed to initialise\n");
-    throw;
-  }
-
   SDL_SetRelativeMouseMode(SDL_TRUE);
   SDL_SetWindowGrab(m_win, SDL_TRUE);
+
+  m_glRenderer = std::make_shared<gl::GLRenderer>();
 }
 
 Window::~Window()
@@ -53,6 +49,7 @@ void Window::run()
     if (m_app) {
       m_app->render(this);
       SDL_GL_SwapWindow(m_win);
+      m_glRenderer->checkError();
     }
   }
 }

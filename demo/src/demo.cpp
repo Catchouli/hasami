@@ -1,13 +1,12 @@
 #include "demo.hpp"
 #include "globe.hpp"
 #include "scenegraph.hpp"
-#include "gl/shader.hpp"
 
 #include "SDL.h"
 
 #include <map>
 
-Demo::Demo()
+Demo::Demo(hs::Window* window)
   : m_running(true)
 {
   using namespace hs;
@@ -17,8 +16,12 @@ Demo::Demo()
   m_camera->m_camSensitivity = 0.001f;
   m_camera->m_pos.z = 3.0f;
 
-  //m_shader = gl::Shader("res/basic.glsl");
-  m_shader = std::make_shared<BasicShader>();
+  m_shader = std::shared_ptr<hs::Shader>(window->renderer()->createShader());
+  m_shader->addAttrib("pos", AttribType::Vec3);
+  m_shader->addAttrib("nrm", AttribType::Vec3);
+  m_shader->addUniform("_mv", UniformType::Mat4);
+  m_shader->addUniform("_mvp", UniformType::Mat4);
+  m_shader->load("res/basic.glsl");
 
   m_scenegraph = std::make_shared<AssemblyNode>();
 
@@ -27,14 +30,13 @@ Demo::Demo()
 
   auto buddhaModel = std::make_shared<ModelNode>();
   buddhaModel->setParent(m_buddha);
-  buddhaModel->m_mesh = std::make_shared<Mesh>();
+  buddhaModel->m_mesh = std::make_shared<Mesh>(*window->renderer());
   buddhaModel->m_mesh->loadObj("res/buddha.obj");
 
   m_globe = std::make_shared<AssemblyNode>();
   m_globe->setParent(m_scenegraph);
 
   auto globeModel = std::make_shared<GlobeNode>();
-  //globeModel->setParent(m_globe);
 }
 
 void Demo::input(const SDL_Event* evt)
@@ -57,18 +59,23 @@ void Demo::render(hs::Window* window)
   // Rotate buddha
   float scale = 2.0f + float(sin(x*0.001f));
   m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
-  //m_buddha->m_rot = glm::rotate(m_buddha->m_rot, scale, glm::vec3(0.0f, 1.0f, 0.0f));
   m_buddha->dirtyLocal();
 
   // Start render
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  window->renderer()->clear(glm::vec4(0.0f), true, true);
 
-  glEnable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
+  const auto& stateManager = window->renderer()->stateManager();
 
-  //glPolygonMode(GL_FRONT, GL_LINE);
+  stateManager->pushState(hs::DepthTest(true));
+  stateManager->pushState(hs::CullFace(false));
+  stateManager->pushState(hs::ClearColor(glm::vec4(0.0f)));
+  stateManager->pushState(hs::PolygonMode(hs::RenderState::PolygonMode::Fill));
 
   if (m_shader)
-    m_scenegraph->draw(*m_shader, m_camera->projMat(), m_camera->viewMat());
+    m_scenegraph->draw(*window->renderer(), *m_shader, m_camera->projMat(), m_camera->viewMat());
+
+  stateManager->popState(hs::DepthTest());
+  stateManager->popState(hs::CullFace());
+  stateManager->popState(hs::ClearColor());
+  stateManager->popState(hs::PolygonMode());
 }

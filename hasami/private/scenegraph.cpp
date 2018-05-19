@@ -43,13 +43,13 @@ AssemblyNode::AssemblyNode()
 {
 }
 
-void AssemblyNode::draw(gl::Shader& shader, const glm::mat4& projection, const glm::mat4& parentmv)
+void AssemblyNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& parentmv)
 {
   updateTransform();
   glm::mat4 modelview = parentmv * m_local;
 
   for (auto child : children()) {
-    child->draw(shader, projection, modelview);
+    child->draw(renderer, shader, projection, modelview);
   }
 }
 
@@ -62,9 +62,9 @@ void AssemblyNode::updateTransform()
   m_local = glm::translate(glm::scale(glm::toMat4(m_rot), m_scale), m_pos);
 }
 
-void ModelNode::draw(gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void ModelNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
-  m_mesh->draw(shader, projection, modelview);
+  m_mesh->draw(renderer, shader, projection, modelview);
 }
 
 }

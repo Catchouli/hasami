@@ -2,23 +2,23 @@
 
 #include "glad/glad.h"
 #include <vector>
+#include "../renderer.hpp"
 
 namespace hs {
 namespace gl {
 
-template <typename T>
-class Buffer {
+class Buffer
+  : public hs::Buffer
+{
 public:
   Buffer();
   ~Buffer();
 
-  void set(const std::vector<T>& buf, GLsizei stride, GLenum usage);
-  void set(const T* buf, GLsizei size, GLsizei stride, GLenum usage);
+  void set(const void* buf, int size, int stride, Buffer::Usage usage) override;
+  void bind(Buffer::Target target) override;
 
-  void bind(GLenum target);
-
-  GLsizei size() const { return m_size; }
-  GLsizei stride() const { return m_stride; }
+  int size() override { return m_size; }
+  int stride() override { return m_stride; }
 
 private:
   Buffer(const Buffer&) = delete;
@@ -28,45 +28,6 @@ private:
   GLsizei m_size;
   GLsizei m_stride;
 };
-
-template <typename T>
-Buffer<T>::Buffer()
-  : m_size(0)
-  , m_stride(0)
-{
-  glGenBuffers(1, &m_buf);
-}
-
-template <typename T>
-Buffer<T>::~Buffer()
-{
-  glDeleteBuffers(1, &m_buf);
-}
-
-template <typename T>
-void Buffer<T>::set(const std::vector<T>& buf, GLsizei stride, GLenum usage)
-{
-  set(buf.data(), buf.size(), usage);
-  m_stride = stride;
-}
-
-template <typename T>
-void Buffer<T>::set(const T* buf, GLsizei size, GLsizei stride, GLenum usage)
-{
-  if (size <= 0)
-    return;
-
-  bind(GL_ARRAY_BUFFER);
-  glBufferData(GL_ARRAY_BUFFER, size * sizeof(T), buf, usage);
-  m_size = size;
-  m_stride = stride;
-}
-
-template <typename T>
-void Buffer<T>::bind(GLenum target)
-{
-  glBindBuffer(target, m_buf);
-}
 
 }
 }

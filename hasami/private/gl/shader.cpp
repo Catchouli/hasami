@@ -3,35 +3,67 @@
 #include <stdio.h>
 #include <fstream>
 #include <sstream>
+#include <sstream>
 
 namespace hs {
 namespace gl {
 
-Shader::Shader(const char* srcPath)
+int glSize(GLenum type) {
+  switch (type) {
+    case GL_BYTE: return 1;
+    case GL_UNSIGNED_BYTE: return 1;
+    case GL_SHORT: return 2;
+    case GL_UNSIGNED_SHORT: return 2;
+    case GL_INT: return 4;
+    case GL_UNSIGNED_INT: return 4;
+    case GL_HALF_FLOAT: return 2;
+    case GL_FLOAT: return 4;
+    case GL_DOUBLE: return 8;
+    default: assert(false); return 0;
+  }
+}
+
+GLenum uniformGlType(UniformType type) {
+  switch (type) {
+    case UniformType::Float: return GL_FLOAT;
+    case UniformType::Mat4: assert(false); return static_cast<GLenum>(-1);
+    default: assert(false); return static_cast<GLenum>(-1);
+  }
+}
+
+GLenum attribGlType(AttribType type) {
+  switch (type) {
+    case AttribType::Float: return GL_FLOAT;
+    default: assert(false); return static_cast<GLenum>(-1);
+  }
+}
+
+Shader::Shader()
+  : m_nextAttribLocation(0)
+  , m_nextUniformLocation(0)
 {
-  load(srcPath);
 }
 
 void Shader::load(const char* srcPath)
 {
-  // todo: are we leaking shaders?
-
-  // Load shader
   std::ifstream t(srcPath);
   std::stringstream buffer;
   buffer << t.rdbuf();
   std::string shaderSource = buffer.str();
 
+  std::string header = genHeader();
+
   const char* vertShader[] = {
     "#version 330\r\n",
     "#define BUILDING_VERTEX_SHADER\r\n",
+    header.c_str(),
     shaderSource.c_str()
   };
 
   m_prog = glCreateProgram();
 
   GLint vert = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vert, 3, vertShader, nullptr);
+  glShaderSource(vert, 4, vertShader, nullptr);
   glCompileShader(vert);
   GLint vertCompiled;
   glGetShaderiv(vert, GL_COMPILE_STATUS, &vertCompiled);
@@ -39,18 +71,19 @@ void Shader::load(const char* srcPath)
     GLsizei logLen = 0;
     GLchar msg[1024];
     glGetShaderInfoLog(vert, 1023, &logLen, msg);
-    fprintf(stderr, "Failed to compile vertex shader: %s\n", msg);
+    fprintf(stderr, "Failed to compile vertex shader: \n%s\n", msg);
     return;
   }
 
   const char* fragShader[] = {
     "#version 330\r\n",
     "#define BUILDING_FRAGMENT_SHADER\r\n",
+    header.c_str(),
     shaderSource.c_str()
   };
 
   GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(frag, 3, fragShader, nullptr);
+  glShaderSource(frag, 4, fragShader, nullptr);
   glCompileShader(frag);
   GLint fragCompiled;
   glGetShaderiv(frag, GL_COMPILE_STATUS, &fragCompiled);
@@ -58,12 +91,14 @@ void Shader::load(const char* srcPath)
     GLsizei logLen = 0;
     GLchar msg[1024];
     glGetShaderInfoLog(frag, 1023, &logLen, msg);
-    fprintf(stderr, "Failed to compile fragment shader: %s\n", msg);
+    fprintf(stderr, "Failed to compile fragment shader: \n%s\n", msg);
     return;
   }
 
   glAttachShader(m_prog, vert);
+  glDeleteShader(vert);
   glAttachShader(m_prog, frag);
+  glDeleteShader(frag);
   glLinkProgram(m_prog);
 
   GLint progLinked;
@@ -72,58 +107,59 @@ void Shader::load(const char* srcPath)
     GLsizei logLen = 0;
     GLchar msg[1024];
     glGetProgramInfoLog(m_prog, 1024, &logLen, msg);
-    fprintf(stderr, "Failed to link program: %s\n", msg);
+    fprintf(stderr, "Failed to link program: \n%s\n", msg);
     return;
   }
 
-  readUniforms();
-}
-
-void Shader::readUniforms()
-{
-  GLint i;
-  GLint count;
-
-  GLint size; // size of the variable
-  GLenum type; // type of the variable (float, vec3 or mat4, etc)
-
-  const GLsizei bufSize = 16; // maximum name length
-  GLchar name[bufSize]; // variable name in GLSL
-  GLsizei length; // name length
-
-  // get attributes
-  glGetProgramiv(m_prog, GL_ACTIVE_ATTRIBUTES, &count);
-
-  m_attributes.clear();
-  for (i = 0; i < count; i++)
-  {
-    glGetActiveAttrib(m_prog, (GLuint)i, bufSize, &length, &size, &type, name);
-    GLint loc = glGetAttribLocation(m_prog, name);
-    m_attributes[name] = loc;
-  }
-
-  // get uniforms
-  glGetProgramiv(m_prog, GL_ACTIVE_UNIFORMS, &count);
-
-  m_uniforms.clear();
-  for (i = 0; i < count; i++)
-  {
-    glGetActiveUniform(m_prog, (GLuint)i, bufSize, &length, &size, &type, name);
-    GLint loc = glGetUniformLocation(m_prog, name);
-
-    if (loc != -1) {
-      m_uniforms[name] = loc;
+  // Check the attrib/uniform locations
+  for (auto& attrib : m_attribs) {
+    int loc = glGetAttribLocation(m_prog, attrib.first.c_str());
+    if (loc != attrib.second.location) {
+      fprintf(stderr, "Attribute is unused: %s\n", attrib.first.c_str());
+      attrib.second.location = -1;
     }
   }
-
-  // get uniform blocks
-  glGetProgramiv(m_prog, GL_ACTIVE_UNIFORM_BLOCKS, &count);
-  
-  m_uniformBlocks.clear();
-  for (i = 0; i < count; i++) {
-    glGetActiveUniformBlockName(m_prog, i, bufSize, &length, name);
-    m_uniformBlocks[name] = i;
+  for (auto& uniform : m_uniforms) {
+    int loc = glGetUniformLocation(m_prog, uniform.first.c_str());
+    if (loc != uniform.second.location) {
+      fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
+      uniform.second.location = -1;
+    }
   }
+}
+
+std::string Shader::genHeader()
+{
+  std::stringstream ss;
+  ss << "#extension GL_ARB_explicit_uniform_location : enable" << std::endl;
+  ss << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
+
+  // Attributes
+  ss << "#ifdef BUILDING_VERTEX_SHADER" << std::endl;
+  for (auto& attr : m_attribs) {
+    ss << "layout(location=" << std::to_string(attr.second.location).c_str() << ") in ";
+    switch (attr.second.type) {
+      case AttribType::Float: ss << "float "; break;
+      case AttribType::Vec3: ss << "vec3 "; break;
+      case AttribType::Vec4: ss << "vec4 "; break;
+      default: ss << "unknown "; break;
+    }
+    ss << attr.first.c_str() << ";" << std::endl;
+  }
+  ss << "#endif" << std::endl;
+
+  // Uniforms
+  for (auto& uniform : m_uniforms) {
+    ss << "layout(location=" << std::to_string(uniform.second.location).c_str() << ") uniform ";
+    switch (uniform.second.type) {
+      case UniformType::Float: ss << "float "; break;
+      case UniformType::Mat4: ss << "mat4 "; break;
+      default: ss << "unknown "; break;
+    }
+    ss << uniform.first.c_str() << ";" << std::endl;
+  }
+
+  return ss.str();
 }
 
 void Shader::bind()
@@ -131,23 +167,50 @@ void Shader::bind()
   glUseProgram(m_prog);
 }
 
-void Shader::flush()
+void Shader::unbind()
 {
-  bind();
+  glUseProgram(0);
+}
 
-  if (m_varsDirty) {
-    m_varsDirty = false;
+void Shader::addAttrib(const char* name, AttribType type)
+{
+  m_attribs[name] = Attribute{m_nextAttribLocation++, type};
+}
 
-    for (auto& var : m_shaderVars) {
-      if (var.second->dirty()) {
-        const int loc = glGetUniformLocation(m_prog, var.first.c_str());
-        const int size = var.second->size();
+void Shader::bindAttrib(const char* name, int size, AttribType type, size_t stride, int offset)
+{
+  auto it = m_attribs.find(name);
+  if (it != m_attribs.end() && it->second.location != -1) {
+    assert(it->second.location != -1);
+    GLenum glType = attribGlType(type);
+    glEnableVertexAttribArray(it->second.location);
+    glVertexAttribPointer(it->second.location, size, attribGlType(type), GL_FALSE, static_cast<GLsizei>(stride), reinterpret_cast<void*>(static_cast<uintptr_t>(offset)));
+  }
+}
 
-        switch (var.second->type()) {
-          case ShaderVarBase::Type::Mat4: glUniformMatrix4fv(loc, 1, GL_FALSE, static_cast<float*>(var.second->buf())); break;
-          case ShaderVarBase::Type::Unknown: assert(false); break;
-        }
-      }
+void Shader::unbindAttrib(const char* name)
+{
+  auto it = m_attribs.find(name);
+  if (it != m_attribs.end() && it->second.location != -1) {
+    glDisableVertexAttribArray(it->second.location);
+  }
+}
+
+void Shader::addUniform(const char* name, UniformType type)
+{
+  m_uniforms[name] = Uniform{m_nextUniformLocation++, type};
+}
+
+void Shader::setUniform(const char* name, UniformType type, const void* buf)
+{
+  int loc = glGetUniformLocation(m_prog, name);
+
+  auto it = m_uniforms.find(name);
+  if (it != m_uniforms.end() && it->second.location != -1) {
+    switch (type) {
+      case UniformType::Float: glUniform1fv(it->second.location, 1, static_cast<const float*>(buf)); break;;
+      case UniformType::Mat4: glUniformMatrix4fv(it->second.location, 1, GL_FALSE, static_cast<const float*>(buf)); break;;
+      default: assert(false); break;;
     }
   }
 }

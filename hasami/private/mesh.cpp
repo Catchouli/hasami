@@ -1,84 +1,51 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "mesh.hpp"
-#include "gl/shader.hpp"
 
 #include "glm.hpp"
 #include "tiny_obj_loader.h"
 
 namespace hs {
 
-int glSize(GLenum type) {
+int typeSize(AttribType type) {
   switch (type) {
-    case GL_BYTE: return 1;
-    case GL_UNSIGNED_BYTE: return 1;
-    case GL_SHORT: return 2;
-    case GL_UNSIGNED_SHORT: return 2;
-    case GL_INT: return 4;
-    case GL_UNSIGNED_INT: return 4;
-    case GL_HALF_FLOAT: return 2;
-    case GL_FLOAT: return 4;
-    case GL_DOUBLE: return 8;
+    case AttribType::Float: return 4;
     default: assert(false); return 0;
   }
 }
 
-GLenum glType(Attrib::Type type) {
-  switch (type) {
-    case Attrib::Type::Float: return GL_FLOAT;
-    default: assert(false); return static_cast<GLenum>(-1);
-  }
-  assert(false);
-}
-
-Mesh::Mesh()
+Mesh::Mesh(Renderer& renderer)
 {
-
+  m_buf = std::shared_ptr<hs::Buffer>(renderer.createBuffer());
 }
 
-void Mesh::draw(gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
   glm::mat4 mvp = projection * modelview;
 
   // Bind shader
   shader.bind();
 
-  auto prog = shader.prog();
-
   // Uniforms
-  auto loc = glGetUniformLocation(prog, "_mv");
-  glUniformMatrix4fv(loc, 1, GL_FALSE, &modelview[0][0]);
-
-  loc = glGetUniformLocation(prog, "_mvp");
-  glUniformMatrix4fv(loc, 1, GL_FALSE, &mvp[0][0]);
+  shader.setUniform("_mv", UniformType::Mat4, &modelview[0][0]);
+  shader.setUniform("_mvp", UniformType::Mat4, &mvp[0][0]);
 
   // Enable attributes
-  std::vector<GLint> locations;
   size_t lastOffset = 0;
-  for (int i = 0; i < (int)m_attrib.size(); ++i) {
-    const auto& attr = m_attrib[i];
-    const auto loc = glGetAttribLocation(prog, m_attrib[i].name.c_str());
-    locations.push_back(loc);
-
-    GLenum type = glType(attr.type);
-
+  for (auto& attr : m_attrib) {
     size_t offset = (attr.offset.has_value() ? attr.offset.value() : lastOffset);
-    lastOffset = offset + attr.size * glSize(type);
+    lastOffset = offset + attr.size * typeSize(attr.type);
 
-    glEnableVertexAttribArray(loc);
-    glVertexAttribPointer(loc, static_cast<GLint>(attr.size), type, false, m_buf.stride(), (void*)offset);
+    shader.bindAttrib(attr.name.c_str(), static_cast<int>(attr.size), attr.type, m_buf->stride(), static_cast<int>(offset));
   }
 
-  // Flush uniforms
-  shader.flush();
-
   // Draw buffer
-  m_buf.bind(GL_ARRAY_BUFFER);
-  glDrawArrays(GL_TRIANGLES, 0, m_buf.size());
+  m_buf->bind(Buffer::Target::VertexBuffer);
+  renderer.drawArrays(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()));
 
   // Disable attributes
-  for (const auto& loc : locations) {
-    glDisableVertexAttribArray(loc);
+  for (auto& attr : m_attrib) {
+    shader.unbindAttrib(attr.name.c_str());
   }
 }
 
@@ -142,13 +109,13 @@ void Mesh::loadObj(const char* path)
   }
 
   // Set buffers
-  m_buf.set((float*)vertexBuf.data(), (GLsizei)vertexBuf.size()*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), GL_STATIC_DRAW);
+  m_buf->set((float*)vertexBuf.data(), static_cast<int>(vertexBuf.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), Buffer::Usage::StaticDraw);
 
   // Store attributes
   m_attrib.clear();
-  m_attrib.push_back(Attrib("pos", 3, Attrib::Type::Float));
-  m_attrib.push_back(Attrib("nrm", 3, Attrib::Type::Float));
-  m_attrib.push_back(Attrib("uv", 2, Attrib::Type::Float));
+  m_attrib.push_back(Attrib("pos", 3, AttribType::Float));
+  m_attrib.push_back(Attrib("nrm", 3, AttribType::Float));
+  m_attrib.push_back(Attrib("uv", 2, AttribType::Float));
 
   // Write cache out
   writeCachedObj(cache.c_str(), vertexBuf, m_attrib);
@@ -156,7 +123,7 @@ void Mesh::loadObj(const char* path)
 
 bool Mesh::loadCachedObj(const char* path)
 {
-  const int version = 2;
+  const int version = 3;
 
   FILE* fd = fopen(path, "rb");
   if (!fd) {
@@ -180,7 +147,7 @@ bool Mesh::loadCachedObj(const char* path)
     vbuf.push_back(v);
   }
 
-  m_buf.set((float*)vbuf.data(), (GLsizei)vbuf.size()*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), GL_STATIC_DRAW);
+  m_buf->set((float*)vbuf.data(), static_cast<int>(vbuf.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), Buffer::Usage::StaticDraw);
 
   int attribSize = -1;
   fread(&attribSize, sizeof(int), 1, fd);
@@ -199,13 +166,13 @@ bool Mesh::loadCachedObj(const char* path)
     int offset;
     fread(&offset, sizeof(int), 1, fd);
 
-    GLint size;
-    fread(&size, sizeof(GLint), 1, fd);
+    size_t size;
+    fread(&size, sizeof(size_t), 1, fd);
 
     int type;
     fread(&type, sizeof(int), 1, fd);
 
-    m_attrib.push_back(Attrib(name, size, static_cast<Attrib::Type>(type), hasOffset ? offset : std::optional<int>()));
+    m_attrib.push_back(Attrib(name, size, static_cast<AttribType>(type), hasOffset ? offset : std::optional<int>()));
   }
 
   fclose(fd);
@@ -214,7 +181,7 @@ bool Mesh::loadCachedObj(const char* path)
 
 void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs)
 {
-  const int version = 2;
+  const int version = 3;
 
   FILE* fd = fopen(path, "wb");
   if (!fd) {
@@ -244,7 +211,7 @@ void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, con
     int offset = hasOffset ? attrib.offset.value() : -1;
     fwrite(&offset, sizeof(int), 1, fd);
 
-    fwrite(&attrib.size, sizeof(GLint), 1, fd);
+    fwrite(&attrib.size, sizeof(size_t), 1, fd);
 
     int type = static_cast<int>(attrib.type);
     fwrite(&type, sizeof(int), 1, fd);

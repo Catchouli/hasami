@@ -16,8 +16,11 @@ add_library(hasami
   public/gl/sdlwindow.hpp
   private/gl/sdlwindow.cpp
   public/gl/buffer.hpp
+  private/gl/buffer.cpp
   public/gl/shader.hpp
   private/gl/shader.cpp
+  public/gl/renderer.hpp
+  private/gl/renderer.cpp
 )
 
 target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader)

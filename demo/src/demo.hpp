@@ -2,7 +2,6 @@
 
 #include "renderer.hpp"
 #include "app.hpp"
-#include "gl/shader.hpp"
 #include "mesh.hpp"
 #include "scenegraph.hpp"
 #include "camera.hpp"
@@ -12,7 +11,7 @@
 class Demo : public hs::App
 {
 public:
-  Demo();
+  Demo(hs::Window* window);
 
   void render(hs::Window* window) override;
   bool running() override { return m_running; }
@@ -23,7 +22,7 @@ private:
 
   std::shared_ptr<hs::FPSCamera> m_camera;
 
-  std::shared_ptr<hs::gl::Shader> m_shader;
+  std::shared_ptr<hs::Shader> m_shader;
 
   std::shared_ptr<hs::SceneNode> m_scenegraph;
   std::shared_ptr<hs::AssemblyNode> m_buddha;

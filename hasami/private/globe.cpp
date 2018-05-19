@@ -2,26 +2,26 @@
 
 namespace hs {
 
-void GlobeNode::draw(gl::Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void GlobeNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
 {
-  generate(glm::vec3(0.0f, 0.0f, 3.0f));
+  generate(renderer, glm::vec3(0.0f, 0.0f, 3.0f));
   //ModelNode::draw(shader, projection, modelview);
 }
 
-void GlobeNode::generate(const glm::vec3& center)
+void GlobeNode::generate(Renderer& renderer, const glm::vec3& center)
 {
   m_vert.clear();
   generateGlobe(center);
 
   if (!m_mesh)
-    m_mesh = std::make_shared<Mesh>();
+    m_mesh = std::make_shared<Mesh>(renderer);
 
   m_mesh->m_attrib.clear();
-  m_mesh->m_attrib.push_back(Attrib("pos", 3, Attrib::Type::Float));
-  m_mesh->m_attrib.push_back(Attrib("nrm", 3, Attrib::Type::Float));
-  m_mesh->m_attrib.push_back(Attrib("uvs", 2, Attrib::Type::Float));
+  m_mesh->m_attrib.push_back(Attrib("pos", 3, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib("nrm", 3, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib("uvs", 2, AttribType::Float));
 
-  m_mesh->m_buf.set((float*)m_vert.data(), (GLsizei)m_vert.size()*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), GL_STATIC_DRAW);
+  m_mesh->m_buf->set((float*)m_vert.data(), static_cast<int>(m_vert.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), Buffer::Usage::StaticDraw);
 }
 
 void GlobeNode::subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& center, float size)
