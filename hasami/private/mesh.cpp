@@ -4,6 +4,7 @@
 
 #include "glm.hpp"
 #include "tiny_obj_loader.h"
+#include "util.hpp"
 
 namespace hs {
 
@@ -52,11 +53,16 @@ void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection,
   }
 }
 
-void Mesh::loadObj(const char* path)
+void Mesh::loadObj(const char* path, Normals normals)
 {
+  const int version = 0;
+
+  size_t versionHash = 0;
+  hs::hash_combine(versionHash, version, normals);
+
   std::string cache = std::string(path) + ".cache";
 
-  if (loadCachedObj(cache.c_str()))
+  if (loadCachedObj(cache.c_str(), versionHash))
     return;
 
   // Structures
@@ -74,12 +80,71 @@ void Mesh::loadObj(const char* path)
   // Create vertex buffer
   std::vector<Vertex> vertexBuf;
 
+  // Generate per-face normals
+  std::vector<glm::vec3> faceNormals;
+  std::map<size_t, std::vector<size_t>> vertexFaces;
+
+  if (normals == Normals::Flat || normals == Normals::Smooth) {
+    size_t offset = 0;
+    size_t face = 0;
+    for (const auto& shape : shapes) {
+      for (const auto& verts : shape.mesh.num_face_vertices) {
+        if (verts != 3) {
+          printf("Polygon with more or less than 3 sides detected in obj model, skipping\n");
+          offset += verts;
+          face++;
+          faceNormals.push_back(glm::vec3());
+          continue;
+        }
+
+        int idx[3] = { shape.mesh.indices[offset+0].vertex_index
+                        , shape.mesh.indices[offset+1].vertex_index
+                        , shape.mesh.indices[offset+2].vertex_index };
+
+        const auto& v0 = &attrib.vertices[3*idx[0]];
+        const auto& v1 = &attrib.vertices[3*idx[1]];
+        const auto& v2 = &attrib.vertices[3*idx[2]];
+
+        glm::vec3 a = glm::vec3(v0[0], v0[1], v0[2]);
+        glm::vec3 b = glm::vec3(v1[0], v1[1], v1[2]);
+        glm::vec3 c = glm::vec3(v2[0], v2[1], v2[2]);
+
+        glm::vec3 nrm = glm::normalize(glm::cross(b - a, c - a));
+        faceNormals.push_back(nrm);
+        vertexFaces[idx[0]].push_back(face);
+        vertexFaces[idx[1]].push_back(face);
+        vertexFaces[idx[2]].push_back(face);
+      
+        offset += verts;
+        face++;
+      }
+    }
+  }
+
+  // Smooth normals
+  std::vector<glm::vec3> smoothNormals;
+  if (normals == Normals::Smooth) {
+    const size_t vertCount = attrib.vertices.size() / 3;
+    smoothNormals.resize(vertCount);
+    for (int i = 0; i < vertCount; ++i) {
+      const std::vector<size_t> faces = vertexFaces[i];
+      float avgCoeff = 1.0f / faces.size();
+      for (size_t face : faces) {
+        smoothNormals[i] += avgCoeff * faceNormals[face];
+      }
+      smoothNormals[i] = glm::normalize(smoothNormals[i]);
+    }
+  }
+
+  // Convert to non-indexed buffer (we need to concatenate the vertices together anyway)
   size_t offset = 0;
+  size_t face = 0;
   for (const auto& shape : shapes) {
     for (const auto& verts : shape.mesh.num_face_vertices) {
       if (verts != 3) {
         printf("Polygon with more or less than 3 sides detected in obj model, skipping\n");
         offset += verts;
+        face++;
         continue;
       }
 
@@ -88,27 +153,23 @@ void Mesh::loadObj(const char* path)
 
         const auto& idx = shape.mesh.indices[offset];
 
-        const auto& v = idx.vertex_index != -1 ? (float*)&attrib.vertices[idx.vertex_index*3] : zero;
-        const auto& n = idx.normal_index != -1 ? (float*)&attrib.normals[idx.normal_index*3] : zero;
-        const auto& u = idx.texcoord_index != -1 ? (float*)&attrib.texcoords[idx.texcoord_index*3] : zero;
+        const float* v = idx.vertex_index != -1 ? &attrib.vertices[idx.vertex_index*3] : zero;
+        const float* u = idx.texcoord_index != -1 ? &attrib.texcoords[idx.texcoord_index*2] : zero;
+        const float* n = nullptr;
+
+        if (idx.vertex_index < smoothNormals.size())
+          n = (float*)&smoothNormals[idx.vertex_index];
+        else if (face < faceNormals.size())
+          n = (float*)&faceNormals[face];
+        else
+          n = idx.normal_index != -1 ? &attrib.normals[idx.normal_index*3] : zero;
 
         vertexBuf.push_back({ glm::vec3(v[0], v[1], v[2]), glm::vec3(n[0], n[1], n[2]), glm::vec2(u[0], u[1]) });
 
         offset++;
       }
+      face++;
     }
-  }
-
-  // Loop through and generate normals
-  std::vector<std::vector<glm::vec3>> m_vertexNormals;
-  m_vertexNormals.resize(vertexBuf.size());
-  for (int i = 0; i < vertexBuf.size() / 3; ++i) {
-    auto& a = vertexBuf[i*3+0];
-    auto& b = vertexBuf[i*3+1];
-    auto& c = vertexBuf[i*3+2];
-
-    glm::vec3 nrm = glm::normalize(glm::cross(b.pos - a.pos, c.pos - a.pos));
-    a.nrm = b.nrm = c.nrm = nrm;
   }
 
   // Set buffers
@@ -121,21 +182,19 @@ void Mesh::loadObj(const char* path)
   m_attrib.push_back(Attrib("uv", 2, AttribType::Float));
 
   // Write cache out
-  writeCachedObj(cache.c_str(), vertexBuf, m_attrib);
+  writeCachedObj(cache.c_str(), versionHash, vertexBuf, m_attrib);
 }
 
-bool Mesh::loadCachedObj(const char* path)
+bool Mesh::loadCachedObj(const char* path, size_t versionHash)
 {
-  const int version = 3;
-
   FILE* fd = fopen(path, "rb");
   if (!fd) {
     return false;
   }
 
-  int vers = -1;
-  fread(&vers, sizeof(int), 1, fd);
-  if (vers != version) {
+  size_t vers = -1;
+  fread(&vers, sizeof(size_t), 1, fd);
+  if (vers != versionHash) {
     fclose(fd);
     return false;
   }
@@ -182,16 +241,14 @@ bool Mesh::loadCachedObj(const char* path)
   return true;
 }
 
-void Mesh::writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs)
+void Mesh::writeCachedObj(const char* path, size_t versionHash, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs)
 {
-  const int version = 3;
-
   FILE* fd = fopen(path, "wb");
   if (!fd) {
     return;
   }
 
-  fwrite(&version, sizeof(int), 1, fd);
+  fwrite(&versionHash, sizeof(size_t), 1, fd);
 
   int vbufSize = (int)vbuf.size();
   fwrite(&vbufSize, sizeof(int), 1, fd);

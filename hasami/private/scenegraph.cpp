@@ -59,7 +59,11 @@ void AssemblyNode::updateTransform()
     return;
 
   m_localDirty = false;
-  m_local = glm::translate(glm::scale(glm::toMat4(m_rot), m_scale), m_pos);
+
+  glm::mat4 translation = glm::translate(glm::mat4(), m_pos);
+  glm::mat4 rotation = glm::toMat4(m_rot);
+  glm::mat4 scale = glm::scale(glm::mat4(), m_scale);
+  m_local = translation * rotation * scale;
 }
 
 void ModelNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)

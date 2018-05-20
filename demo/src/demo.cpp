@@ -14,7 +14,7 @@ Demo::Demo(hs::Window* window)
   m_camera = std::make_shared<FPSCamera>();
   m_camera->m_camSpeed = 0.01f;
   m_camera->m_camSensitivity = 0.001f;
-  m_camera->m_pos.z = 3.0f;
+  m_camera->m_pos.z = 1.5f;
 
   m_shader = std::shared_ptr<hs::Shader>(window->renderer()->createShader());
   m_shader->addAttrib("pos", AttribType::Vec3);
@@ -31,7 +31,7 @@ Demo::Demo(hs::Window* window)
   auto buddhaModel = std::make_shared<ModelNode>();
   buddhaModel->setParent(m_buddha);
   buddhaModel->m_mesh = std::make_shared<Mesh>(*window->renderer());
-  buddhaModel->m_mesh->loadObj("res/buddha.obj");
+  buddhaModel->m_mesh->loadObj("res/miku.obj", Mesh::Normals::Smooth);
   m_buddhaMesh = buddhaModel->m_mesh;
 
   m_globe = std::make_shared<AssemblyNode>();
@@ -59,7 +59,11 @@ void Demo::render(hs::Window* window)
 
   // Rotate buddha
   float scale = 2.0f + float(sin(x*0.001f));
-  m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+  m_buddha->m_pos.y = -1.0f;
+  m_buddha->m_scale = glm::vec3(0.02f, 0.02f, 0.02f);
+  //m_buddha->m_scale = glm::vec3(0.02f + 0.02f*(float)sin(x * 0.001f));
+  m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+  m_buddha->m_rot *= glm::rotate(glm::quat(), x * 0.001f, glm::vec3(0.0f, 1.0f, 0.0f));
   m_buddha->dirtyLocal();
 
   // Start render

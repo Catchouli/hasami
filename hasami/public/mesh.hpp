@@ -27,10 +27,12 @@ struct Vertex {
 class Mesh
 {
 public:
+  enum class Normals { Provided, Flat, Smooth };
+
   Mesh(Renderer& renderer);
-  void loadObj(const char* path);
-  bool loadCachedObj(const char* path);
-  void writeCachedObj(const char* path, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs);
+  void loadObj(const char* path, Normals normals);
+  bool loadCachedObj(const char* path, size_t versionHash);
+  void writeCachedObj(const char* path, size_t versionHash, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs);
   void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview);
 
   std::shared_ptr<hs::Buffer> m_buf;
