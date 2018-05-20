@@ -5,9 +5,9 @@
 
 namespace hs {
 namespace sdl {
+namespace internal {
 
-Window::Window(App* app)
-  : m_app(app)
+SDLWindowBase::SDLWindowBase(bool createGLContext)
 {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     fprintf(stderr, "SDL error: %s\n", SDL_GetError());
@@ -19,21 +19,21 @@ Window::Window(App* app)
     throw;
   }
 
-  m_context = SDL_GL_CreateContext(m_win);
+  if (createGLContext) {
+    SDL_GL_CreateContext(m_win);
+  }
 
   SDL_SetRelativeMouseMode(SDL_TRUE);
   SDL_SetWindowGrab(m_win, SDL_TRUE);
-
-  m_glRenderer = std::make_shared<gl::GLRenderer>();
 }
 
-Window::~Window()
+SDLWindowBase::~SDLWindowBase()
 {
   SDL_DestroyRenderer(m_renderer);
   SDL_DestroyWindow(m_win);
 }
 
-void Window::run()
+void SDLWindowBase::run()
 {
   while (m_app && m_app->running()) {
     SDL_Event evt;
@@ -49,10 +49,12 @@ void Window::run()
     if (m_app) {
       m_app->render(this);
       SDL_GL_SwapWindow(m_win);
-      m_glRenderer->checkError();
+      if (auto* renderer = this->renderer())
+        renderer->checkError();
     }
   }
 }
 
+}
 }
 }

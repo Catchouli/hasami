@@ -8,8 +8,10 @@
 #include <vec4.hpp>
 #include <vector>
 #include <variant.hpp>
+
 #include <map>
 #include <stack>
+#include <set>
 
 namespace hs {
 
@@ -109,17 +111,19 @@ void Buffer::set(const T* buf, int size, int stride, Usage usage)
 class StateManager
 {
 public:
-  void pushInitialStates(); //^ call from derived class
+  StateManager();
   void pushState(RenderState renderState);
   void popState(RenderState renderState);
+  void flush();
 
   virtual void applyState(const RenderState& renderState) = 0;
 
 private:
   std::map<RenderState::State, std::stack<RenderState>> m_stacks;
+  std::set<std::stack<RenderState>*> m_dirtyStates;
 };
 
-inline void StateManager::pushInitialStates()
+inline StateManager::StateManager()
 {
   pushState(DepthTest(false));
   pushState(CullFace(false));
@@ -131,15 +135,23 @@ inline void StateManager::pushState(RenderState renderState)
 {
   auto& stack = m_stacks[renderState.m_state];
   stack.push(renderState);
-  applyState(stack.top());
+  m_dirtyStates.insert(&stack);
 }
 
 inline void StateManager::popState(RenderState renderState)
 {
   auto& stack = m_stacks[renderState.m_state];
   stack.pop();
-  if (!stack.empty())
-    applyState(stack.top());
+  m_dirtyStates.insert(&stack);
+}
+
+inline void StateManager::flush()
+{
+  for (const auto& state : m_dirtyStates) {
+    if (!state->empty()) {
+      applyState(state->top());
+    }
+  }
 }
 
 }

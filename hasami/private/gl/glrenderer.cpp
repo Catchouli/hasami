@@ -1,6 +1,6 @@
-#include "gl/renderer.hpp"
-#include "gl/shader.hpp"
-#include "gl/buffer.hpp"
+#include "gl/glrenderer.hpp"
+#include "gl/glshader.hpp"
+#include "gl/glbuffer.hpp"
 
 #include "glad/glad.h"
 

@@ -2,7 +2,7 @@
 
 #include "glad/glad.h"
 #include <vector>
-#include "../renderer.hpp"
+#include "renderer.hpp"
 
 namespace hs {
 namespace gl {

@@ -39,6 +39,9 @@ void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection,
     shader.bindAttrib(attr.name.c_str(), static_cast<int>(attr.size), attr.type, m_buf->stride(), static_cast<int>(offset));
   }
 
+  // Flush state
+  renderer.stateManager()->flush();
+
   // Draw buffer
   m_buf->bind(Buffer::Target::VertexBuffer);
   renderer.drawArrays(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()));

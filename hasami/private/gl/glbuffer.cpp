@@ -1,4 +1,4 @@
-#include "gl/buffer.hpp"
+#include "gl/glbuffer.hpp"
 
 namespace hs {
 namespace gl {

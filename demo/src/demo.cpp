@@ -32,6 +32,7 @@ Demo::Demo(hs::Window* window)
   buddhaModel->setParent(m_buddha);
   buddhaModel->m_mesh = std::make_shared<Mesh>(*window->renderer());
   buddhaModel->m_mesh->loadObj("res/buddha.obj");
+  m_buddhaMesh = buddhaModel->m_mesh;
 
   m_globe = std::make_shared<AssemblyNode>();
   m_globe->setParent(m_scenegraph);
