@@ -1,5 +1,4 @@
 #include "gl/sdlwindow.hpp"
-#include "app.hpp"
 #include "SDL.h"
 #include <stdio.h>
 
