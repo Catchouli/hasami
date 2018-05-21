@@ -4,7 +4,7 @@ layout(std140) uniform ViewSettings {
 };
 
 #ifdef BUILDING_VERTEX_SHADER
-
+e
 out vec3 var_nrm;
 
 void main()
