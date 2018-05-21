@@ -5,6 +5,9 @@
 #include <sstream>
 #include <sstream>
 
+void openInBrowser(std::string);
+std::string genShaderErrorPage(const std::vector<const char*>& source, std::string errors);
+
 namespace hs {
 namespace gl {
 
@@ -53,7 +56,7 @@ void Shader::load(const char* srcPath)
 
   std::string header = genHeader();
 
-  const char* vertShader[] = {
+  std::vector<const char*> vertShader = {
     "#version 330\r\n",
     "#define BUILDING_VERTEX_SHADER\r\n",
     header.c_str(),
@@ -63,7 +66,7 @@ void Shader::load(const char* srcPath)
   m_prog = glCreateProgram();
 
   GLint vert = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vert, 4, vertShader, nullptr);
+  glShaderSource(vert, static_cast<int>(vertShader.size()), vertShader.data(), nullptr);
   glCompileShader(vert);
   GLint vertCompiled;
   glGetShaderiv(vert, GL_COMPILE_STATUS, &vertCompiled);
@@ -72,10 +75,11 @@ void Shader::load(const char* srcPath)
     GLchar msg[1024];
     glGetShaderInfoLog(vert, 1023, &logLen, msg);
     fprintf(stderr, "Failed to compile vertex shader: \n%s\n", msg);
+    openInBrowser(genShaderErrorPage(vertShader, msg));
     return;
   }
 
-  const char* fragShader[] = {
+  std::vector<const char*> fragShader = {
     "#version 330\r\n",
     "#define BUILDING_FRAGMENT_SHADER\r\n",
     header.c_str(),
@@ -83,7 +87,7 @@ void Shader::load(const char* srcPath)
   };
 
   GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(frag, 4, fragShader, nullptr);
+  glShaderSource(frag, static_cast<int>(fragShader.size()), fragShader.data(), nullptr);
   glCompileShader(frag);
   GLint fragCompiled;
   glGetShaderiv(frag, GL_COMPILE_STATUS, &fragCompiled);
@@ -92,6 +96,7 @@ void Shader::load(const char* srcPath)
     GLchar msg[1024];
     glGetShaderInfoLog(frag, 1023, &logLen, msg);
     fprintf(stderr, "Failed to compile fragment shader: \n%s\n", msg);
+    openInBrowser(genShaderErrorPage(fragShader, msg));
     return;
   }
 
@@ -137,6 +142,7 @@ std::string Shader::genHeader()
   // Attributes
   ss << "#ifdef BUILDING_VERTEX_SHADER" << std::endl;
   for (auto& attr : m_attribs) {
+    ss << "#define ATTR_" << attr.first << std::endl;
     ss << "layout(location=" << std::to_string(attr.second.location).c_str() << ") in ";
     switch (attr.second.type) {
       case AttribType::Float: ss << "float "; break;
@@ -150,6 +156,7 @@ std::string Shader::genHeader()
 
   // Uniforms
   for (auto& uniform : m_uniforms) {
+    ss << "#define UNI_" << uniform.first << std::endl;
     ss << "layout(location=" << std::to_string(uniform.second.location).c_str() << ") uniform ";
     switch (uniform.second.type) {
       case UniformType::Float: ss << "float "; break;
@@ -216,4 +223,41 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
 }
 
 }
+}
+
+// Error page stuff
+
+#ifdef WIN32
+#include <Shellapi.h>
+#define mktemp _mktemp
+#define _CRT_SECURE_NO_WARNINGS
+void openInBrowser(std::string url)
+{
+  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+#else
+void openInBrowser(std::string) {}
+#endif
+
+#include <io.h>
+#include <fstream>
+
+std::string genShaderErrorPage(const std::vector<const char*>& source, std::string errors)
+{
+  char name[256];
+#ifdef WIN32
+  tmpnam_s(name, 255);
+#else
+  tmpnam(name);
+#endif
+
+  std::string filename = std::string(name) = ".html";
+
+  std::ofstream file(filename);
+
+  for (const char* block : source) {
+    file << block;
+  }
+
+  return filename;
 }
