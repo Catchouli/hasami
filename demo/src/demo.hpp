@@ -1,7 +1,6 @@
 #pragma once
 
 #include "renderer.hpp"
-#include "app.hpp"
 #include "mesh.hpp"
 #include "scenegraph.hpp"
 #include "camera.hpp"

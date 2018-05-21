@@ -1,6 +1,7 @@
 #pragma once
 
-#include <functional>
+#include "renderstate.hpp"
+
 #include <optional.hpp>
 #include <matrix.hpp>
 #include <vec2.hpp>
@@ -13,9 +14,25 @@
 #include <stack>
 #include <set>
 
+// todo: abstract input
+union SDL_Event;
+
 namespace hs {
 
+/// Renderer API
+/// Example usage:
+///   class MyApp : public hs::App;
+///   hs::sdl::SDLWindow<hs::gl::GLRenderer> window(true);
+///   MyApp app;
+///   window.setApp(&app);
+///   window.run();
+///
+///   window.renderer(); //^ access the renderer api
+///
+/// Everything else can be accessed through the Renderer
+
 class App;
+class Window;
 class Renderer;
 class Shader;
 class Buffer;
@@ -25,38 +42,41 @@ enum class UniformType { Float, Mat4, Unknown };
 enum class AttribType { Float, Vec3, Vec4, Unknown };
 enum class PrimitiveType { Triangles };
 
-struct RenderState
-{
-  enum class State { ClearColor, DepthTest, CullFace, PolygonMode };
-  enum class PolygonMode { Point, Line, Fill };
-  using Value = std::variant<glm::vec4, bool, PolygonMode>;
-
-  State m_state;
-  Value m_val;
+/// App interface
+/// End users should implement this interface and pass it to a window
+/// to update and service
+class App {
+public:
+  virtual void render(Window* window) = 0;
+  virtual bool running() = 0;
+  virtual void input(const SDL_Event* evt) = 0;
 };
 
-inline RenderState ClearColor() { return RenderState{RenderState::State::ClearColor}; };
-inline RenderState ClearColor(const glm::vec4& v) { return RenderState{RenderState::State::ClearColor, v}; };
-inline RenderState DepthTest() { return RenderState{RenderState::State::DepthTest}; };
-inline RenderState DepthTest(bool b) { return RenderState{RenderState::State::DepthTest, b}; };
-inline RenderState CullFace() { return RenderState{RenderState::State::CullFace}; };
-inline RenderState CullFace(bool b) { return RenderState{RenderState::State::CullFace, b}; };
-inline RenderState PolygonMode() { return RenderState{RenderState::State::PolygonMode}; };
-inline RenderState PolygonMode(RenderState::PolygonMode mode) { return RenderState{RenderState::State::PolygonMode, mode}; };
-
+/// Window interface
+/// Implementers of this interface create a window and then service an app
+/// calling its render function and providing it with input. A window also
+/// provides its app with a Renderer.
 class Window
 {
 public:
   virtual ~Window() {}
+
+  // Interface
+
   virtual void setApp(App* app) = 0;
   virtual void run() = 0;
   virtual Renderer* renderer() = 0;
 };
 
+/// Renderer interface
+/// Provides access to drawing functions and other renderer resources.
 class Renderer
 {
 public:
   virtual ~Renderer() {}
+
+  // Interface
+
   virtual Shader* createShader() = 0;
   virtual Buffer* createBuffer() = 0;
   virtual StateManager* stateManager() = 0;
@@ -65,10 +85,17 @@ public:
   virtual bool checkError() = 0;
 };
 
+/// Shader interface
+/// Allows a shader program to be loaded and bound, and allows attributes and
+/// uniforms to be bound to the shader program. Uniforms and attributes added
+/// before calling load() are automatically added to the shader source.
 class Shader
 {
 public:
   virtual ~Shader() {}
+
+  // Interface
+
   virtual void load(const char* srcPath) = 0;
   virtual void bind() = 0;
   virtual void unbind() = 0;
@@ -79,6 +106,9 @@ public:
   virtual void setUniform(const char* name, UniformType type, const void* buf) = 0;
 };
 
+/// Buffer interface
+/// Used to provide binary data to the renderer, with some convenience functions
+/// for initialization.
 class Buffer {
 public:
   enum class Target { VertexBuffer };
@@ -90,24 +120,33 @@ public:
   template <typename T>
   void set(const T* buf, int size, int stride, Usage usage);
 
+  // Interface
+
   virtual void set(const void* buf, int size, int stride, Usage usage) = 0;
   virtual void bind(Target target) = 0;
   virtual int stride() = 0;
   virtual int size() = 0;
 };
 
+/// A set function that takes a vector<T> and updates the buffer with its
+/// contents
 template <typename T>
 void Buffer::set(const std::vector<T>& buf, int stride, Usage usage)
 {
   set((const void*)buf.data(), buf.size() * sizeof(T), stride, usage);
 }
 
+/// A set function that takes a typed array and its size and updates the
+/// buffer with its contents
 template <typename T>
 void Buffer::set(const T* buf, int size, int stride, Usage usage)
 {
   set((const void*)buf, size * sizeof(T), stride, usage);
 }
 
+/// StateManager
+/// The state manager allows the renderer state to be updated in a stack
+/// so that the previous state can be restored when you're done rendering
 class StateManager
 {
 public:
@@ -116,42 +155,13 @@ public:
   void popState(RenderState renderState);
   void flush();
 
+  // Interface
+
   virtual void applyState(const RenderState& renderState) = 0;
 
 private:
   std::map<RenderState::State, std::stack<RenderState>> m_stacks;
   std::set<std::stack<RenderState>*> m_dirtyStates;
 };
-
-inline StateManager::StateManager()
-{
-  pushState(DepthTest(false));
-  pushState(CullFace(false));
-  pushState(ClearColor(glm::vec4(0.0f)));
-  pushState(PolygonMode(RenderState::PolygonMode::Fill));
-}
-
-inline void StateManager::pushState(RenderState renderState)
-{
-  auto& stack = m_stacks[renderState.m_state];
-  stack.push(renderState);
-  m_dirtyStates.insert(&stack);
-}
-
-inline void StateManager::popState(RenderState renderState)
-{
-  auto& stack = m_stacks[renderState.m_state];
-  stack.pop();
-  m_dirtyStates.insert(&stack);
-}
-
-inline void StateManager::flush()
-{
-  for (const auto& state : m_dirtyStates) {
-    if (!state->empty()) {
-      applyState(state->top());
-    }
-  }
-}
 
 }

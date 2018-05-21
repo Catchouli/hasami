@@ -1,10 +1,9 @@
 project(hasami VERSION 0.1 LANGUAGES CXX)
 
 add_library(hasami
-  public/app.hpp
-  private/app.cpp
   public/renderer.hpp
   private/renderer.cpp
+  public/renderstate.hpp
   public/scenegraph.hpp
   private/scenegraph.cpp
   public/globe.hpp
