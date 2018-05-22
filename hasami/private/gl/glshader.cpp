@@ -7,7 +7,7 @@
 #include <regex>
 
 void openInBrowser(const std::string& url);
-std::string genShaderErrorPage(const std::string& source, const std::string& errors);
+std::string genShaderErrorPage(const std::string& source, const std::string& errors, const std::string& shaderType);
 
 namespace hs {
 namespace gl {
@@ -76,7 +76,7 @@ void Shader::load(const char* srcPath)
     GLchar msg[1024];
     glGetShaderInfoLog(vert, 1023, &logLen, msg);
     fprintf(stderr, "Failed to compile vertex shader: \n%s\n", msg);
-    openInBrowser(genShaderErrorPage(vertShader, msg));
+    openInBrowser(genShaderErrorPage(vertShader, msg, "Vertex"));
     return;
   }
 
@@ -97,7 +97,7 @@ void Shader::load(const char* srcPath)
     GLchar msg[1024];
     glGetShaderInfoLog(frag, 1023, &logLen, msg);
     fprintf(stderr, "Failed to compile fragment shader: \n%s\n", msg);
-    openInBrowser(genShaderErrorPage(fragShader, msg));
+    openInBrowser(genShaderErrorPage(fragShader, msg, "Fragment"));
     return;
   }
 
@@ -243,7 +243,7 @@ void openInBrowser(const std::string&) {}
 #include <io.h>
 #include <fstream>
 
-std::string genShaderErrorPage(const std::string& source, const std::string& errors)
+std::string genShaderErrorPage(const std::string& source, const std::string& errors, const std::string& shaderType)
 {
   char name[256];
 #ifdef WIN32
@@ -287,17 +287,20 @@ std::string genShaderErrorPage(const std::string& source, const std::string& err
   file << "}" << std::endl;
   file << "#left {" << std::endl;
   file << "  display: inline-block;" << std::endl;
-  file << "  width: 49%;" << std::endl;
+  file << "  float: left;" << std::endl;
+  file << "  width: 50%;" << std::endl;
   file << "}" << std::endl;
   file << "#right {" << std::endl;
   file << "  display: inline-block;" << std::endl;
-  file << "  width: 49%;" << std::endl;
+  file << "  float: right;" << std::endl;
+  file << "  width: 50%;" << std::endl;
   file << "}" << std::endl;
   file << ".selected {" << std::endl;
   file << "  background: #CCC;" << std::endl;
   file << "}" << std::endl;
   file << "</style>" << std::endl;
 
+  file << "<h1>" << shaderType << " shader error log</h1>" << std::endl;
   file << "<div id=\"left\">" << std::endl;
   file << "<table>" << std::endl;
   int lineNum = 1;
