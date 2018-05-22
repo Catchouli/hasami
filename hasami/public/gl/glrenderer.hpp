@@ -11,6 +11,7 @@ public:
   GLRenderer();
   hs::Shader* createShader() override;
   hs::Buffer* createBuffer() override;
+  hs::Texture* createTexture() override;
   hs::StateManager* stateManager() override { return m_stateManager.get(); }
   void drawArrays(PrimitiveType prim, int start, int count) override;
   void clear(const glm::vec4& col, bool color, bool depth) override;

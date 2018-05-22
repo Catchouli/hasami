@@ -20,10 +20,12 @@ add_library(hasami
   private/gl/glshader.cpp
   public/gl/glrenderer.hpp
   private/gl/glrenderer.cpp
+  public/gl/gltexture.hpp
+  private/gl/gltexture.cpp
   public/util.hpp
 )
 
-target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader)
+target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage)
 
 target_include_directories(hasami PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>

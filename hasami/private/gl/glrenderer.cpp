@@ -1,6 +1,7 @@
 #include "gl/glrenderer.hpp"
 #include "gl/glshader.hpp"
 #include "gl/glbuffer.hpp"
+#include "gl/gltexture.hpp"
 
 #include "glad/glad.h"
 
@@ -35,6 +36,11 @@ hs::Shader* GLRenderer::createShader()
 hs::Buffer* GLRenderer::createBuffer()
 {
   return new gl::Buffer();
+}
+
+hs::Texture* GLRenderer::createTexture()
+{
+  return new gl::Texture();
 }
 
 void GLRenderer::drawArrays(PrimitiveType prim, int start, int count)

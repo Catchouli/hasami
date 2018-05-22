@@ -23,7 +23,7 @@ public:
 
   const std::set<std::shared_ptr<SceneNode>>& children() { return m_children; }
 
-  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view) = 0;
+  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) = 0;
 
   std::shared_ptr<SceneNode> ptr() { return shared_from_this(); }
 
@@ -41,7 +41,7 @@ class AssemblyNode
 public:
   AssemblyNode();
 
-  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view) override;
+  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
 
   void dirtyLocal() { m_localDirty = true; }
 
@@ -60,9 +60,10 @@ class ModelNode
   : public SceneNode
 {
 public:
-  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view) override;
+  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
 
   std::shared_ptr<Mesh> m_mesh;
+  std::shared_ptr<Texture> m_tex;
 };
 
 }

@@ -2,10 +2,10 @@
 
 namespace hs {
 
-void GlobeNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void GlobeNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& obj)
 {
   generate(renderer, glm::vec3(0.0f, 0.0f, 3.0f));
-  //ModelNode::draw(shader, projection, modelview);
+  ModelNode::draw(renderer, shader, projection, view, obj);
 }
 
 void GlobeNode::generate(Renderer& renderer, const glm::vec3& center)
@@ -17,11 +17,11 @@ void GlobeNode::generate(Renderer& renderer, const glm::vec3& center)
     m_mesh = std::make_shared<Mesh>(renderer);
 
   m_mesh->m_attrib.clear();
-  m_mesh->m_attrib.push_back(Attrib("pos", 3, AttribType::Float));
-  m_mesh->m_attrib.push_back(Attrib("nrm", 3, AttribType::Float));
-  m_mesh->m_attrib.push_back(Attrib("uvs", 2, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib("in_pos", 3, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib("in_nrm", 3, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib("in_uvs", 2, AttribType::Float));
 
-  m_mesh->m_buf->set((float*)m_vert.data(), static_cast<int>(m_vert.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), Buffer::Usage::StaticDraw);
+  m_mesh->m_buf->set((float*)m_vert.data(), static_cast<int>(m_vert.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), hs::BufferUsage::StaticDraw);
 }
 
 void GlobeNode::subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& center, float size)
@@ -37,9 +37,7 @@ void GlobeNode::subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec
     return;
   }
 
-  if (true || dist > ratio * size || size < minsize) {
-    // Calc normal
-
+  if (dist > ratio * size || size < minsize) {
     glm::vec3 nrm = glm::normalize(glm::cross(b - a, c - a));
     m_vert.push_back({a, nrm, glm::vec2(0.0f)});
     m_vert.push_back({b, nrm, glm::vec2(0.0f)});

@@ -25,7 +25,7 @@ private:
 
   std::shared_ptr<hs::SceneNode> m_scenegraph;
   std::shared_ptr<hs::AssemblyNode> m_buddha;
+  std::shared_ptr<hs::AssemblyNode> m_orbitPivot;
+  std::shared_ptr<hs::AssemblyNode> m_orbitMiku;
   std::shared_ptr<hs::AssemblyNode> m_globe;
-
-  std::shared_ptr<hs::Mesh> m_buddhaMesh;
 };
