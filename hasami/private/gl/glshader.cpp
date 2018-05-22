@@ -4,9 +4,10 @@
 #include <fstream>
 #include <sstream>
 #include <sstream>
+#include <regex>
 
-void openInBrowser(std::string);
-std::string genShaderErrorPage(const std::vector<const char*>& source, std::string errors);
+void openInBrowser(const std::string& url);
+std::string genShaderErrorPage(const std::string& source, const std::string& errors);
 
 namespace hs {
 namespace gl {
@@ -51,22 +52,22 @@ void Shader::load(const char* srcPath)
 {
   std::ifstream t(srcPath);
   std::stringstream buffer;
+  buffer << genHeader();
   buffer << t.rdbuf();
+
   std::string shaderSource = buffer.str();
-
-  std::string header = genHeader();
-
-  std::vector<const char*> vertShader = {
-    "#version 330\r\n",
-    "#define BUILDING_VERTEX_SHADER\r\n",
-    header.c_str(),
-    shaderSource.c_str()
-  };
 
   m_prog = glCreateProgram();
 
+  std::stringstream vertShaderSS;
+  vertShaderSS << "#version 330" << std::endl;
+  vertShaderSS << "#define BUILDING_VERTEX_SHADER" << std::endl;
+  vertShaderSS << shaderSource;
+  std::string vertShader = vertShaderSS.str();
+
   GLint vert = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vert, static_cast<int>(vertShader.size()), vertShader.data(), nullptr);
+  const char* pVertShader[] = { vertShader.c_str() };
+  glShaderSource(vert, 1, pVertShader, nullptr);
   glCompileShader(vert);
   GLint vertCompiled;
   glGetShaderiv(vert, GL_COMPILE_STATUS, &vertCompiled);
@@ -79,15 +80,15 @@ void Shader::load(const char* srcPath)
     return;
   }
 
-  std::vector<const char*> fragShader = {
-    "#version 330\r\n",
-    "#define BUILDING_FRAGMENT_SHADER\r\n",
-    header.c_str(),
-    shaderSource.c_str()
-  };
+  std::stringstream fragShaderSS;
+  fragShaderSS << "#version 330" << std::endl;
+  fragShaderSS << "#define BUILDING_FRAGMENT_SHADER" << std::endl;
+  fragShaderSS << shaderSource;
+  std::string fragShader = fragShaderSS.str();
 
   GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(frag, static_cast<int>(fragShader.size()), fragShader.data(), nullptr);
+  const char* pFragShader[] = { fragShader.c_str() };
+  glShaderSource(vert, 1, pFragShader, nullptr);
   glCompileShader(frag);
   GLint fragCompiled;
   glGetShaderiv(frag, GL_COMPILE_STATUS, &fragCompiled);
@@ -231,18 +232,18 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
 #include <Shellapi.h>
 #define mktemp _mktemp
 #define _CRT_SECURE_NO_WARNINGS
-void openInBrowser(std::string url)
+void openInBrowser(const std::string& url)
 {
   ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 #else
-void openInBrowser(std::string) {}
+void openInBrowser(const std::string&) {}
 #endif
 
 #include <io.h>
 #include <fstream>
 
-std::string genShaderErrorPage(const std::vector<const char*>& source, std::string errors)
+std::string genShaderErrorPage(const std::string& source, const std::string& errors)
 {
   char name[256];
 #ifdef WIN32
@@ -251,13 +252,88 @@ std::string genShaderErrorPage(const std::vector<const char*>& source, std::stri
   tmpnam(name);
 #endif
 
-  std::string filename = std::string(name) = ".html";
+  std::istringstream ss(source);
+  std::istringstream errs(errors);
+
+  std::string filename = std::string(name) + ".html";
 
   std::ofstream file(filename);
+  std::string line;
 
-  for (const char* block : source) {
-    file << block;
+
+  file << "<script src = \"https://code.jquery.com/jquery-3.3.1.min.js\"></script>" << std::endl;
+
+  file << "<style type=\"text/css\">" << std::endl;
+  file << "* {" << std::endl;
+  file << "  font-family: monaco;" << std::endl;
+  file << "}" << std::endl;
+  file << ".linenum {" << std::endl;
+  file << "  padding-right: 1em;" << std::endl;
+  file << "  text-align: right;" << std::endl;
+  file << "}" << std::endl;
+  file << ".linenum a:link {" << std::endl;
+  file << "  color: black;" << std::endl;
+  file << "  text-decoration: none;" << std::endl;
+  file << "}" << std::endl;
+  file << ".linenum a:active {" << std::endl;
+  file << "  color: black;" << std::endl;
+  file << "  text-decoration: none;" << std::endl;
+  file << "}" << std::endl;
+  file << ".linenum a:visited {" << std::endl;
+  file << "  color: black;" << std::endl;
+  file << "  text-decoration: none;" << std::endl;
+  file << "}" << std::endl;
+  file << ".line {" << std::endl;
+  file << "}" << std::endl;
+  file << "#left {" << std::endl;
+  file << "  display: inline-block;" << std::endl;
+  file << "  width: 49%;" << std::endl;
+  file << "}" << std::endl;
+  file << "#right {" << std::endl;
+  file << "  display: inline-block;" << std::endl;
+  file << "  width: 49%;" << std::endl;
+  file << "}" << std::endl;
+  file << ".selected {" << std::endl;
+  file << "  background: #CCC;" << std::endl;
+  file << "}" << std::endl;
+  file << "</style>" << std::endl;
+
+  file << "<div id=\"left\">" << std::endl;
+  file << "<table>" << std::endl;
+  int lineNum = 1;
+  while (std::getline(ss, line)) {
+    file << "  <tr id=\"" << std::to_string(lineNum) << "\">" << std::endl;
+    file << "    <td class=\"linenum\"><a href=\"#" << std::to_string(lineNum) << "\">" << std::endl;
+    file << "      " << std::to_string(lineNum++) << std::endl;
+    file << "    </a></td>" << std::endl;
+    file << "    <td class=\"line\">" << line << "</td>" << std::endl;
+    file << "  </tr>" << std::endl;
   }
+  file << "</table>" << std::endl;
+  file << "</div>" << std::endl;
+
+  file << "<div id=\"right\">" << std::endl;
+  std::regex regexp("0\\((\\d+)\\) : (.+)");
+  std::smatch matches;
+  while (std::getline(errs, line)) {
+    if (std::regex_search(line, matches, regexp)) {
+      int lineNum = atoi(matches[1].str().c_str());
+      file << "<a class=\"lineref\" href=\"#" << matches[1] << "\">" << matches[1] << "</a>" << ": " << matches[2];
+    }
+    else {
+      file << line;
+    }
+    file << "<br>";
+  }
+  file << "</div>" << std::endl;
+
+  file << "<script>" << std::endl;
+  file << "  $('a.lineref').click(function() {" << std::endl;
+  file << "    $('.selected').removeClass('selected')" << std::endl;
+  file << "    console.log(this)" << std::endl;
+  file << "    $('#'+this.text.trim()).addClass('selected')" << std::endl;
+  file << "  })" << std::endl;
+  file << "</script>" << std::endl;
 
   return filename;
 }
