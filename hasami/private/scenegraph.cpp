@@ -43,13 +43,13 @@ AssemblyNode::AssemblyNode()
 {
 }
 
-void AssemblyNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& parentmv)
+void AssemblyNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& parent)
 {
   updateTransform();
-  glm::mat4 modelview = parentmv * m_local;
+  glm::mat4 object = parent * m_local;
 
   for (auto child : children()) {
-    child->draw(renderer, shader, projection, modelview);
+    child->draw(renderer, shader, projection, view, object);
   }
 }
 
@@ -66,9 +66,22 @@ void AssemblyNode::updateTransform()
   m_local = translation * rotation * scale;
 }
 
-void ModelNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void ModelNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object)
 {
-  m_mesh->draw(renderer, shader, projection, modelview);
+  // todo: acquire samplers
+  // todo: abstract this somehow, it should really be done by the same code that's in Mesh::Draw
+  //       it needs some Material type to manage the shader and what uniforms it has and what's bound
+  if (m_tex) {
+    TextureUnit unit = TextureUnit::Texture0;
+    m_tex->bind(unit);
+    bool err = renderer.checkError();
+    shader.bind();
+    shader.setUniform("sampler_diffuse", UniformType::Sampler2D, &unit);
+    bool err2 = renderer.checkError();
+  }
+  if (m_mesh) {
+    m_mesh->draw(renderer, shader, projection, view, object);
+  }
 }
 
 }

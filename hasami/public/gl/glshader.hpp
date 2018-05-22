@@ -15,6 +15,7 @@ class Shader
 {
 public:
   Shader();
+  ~Shader();
 
   /// Load a glsl shader
   void load(const char* srcPath) override;
@@ -47,8 +48,11 @@ public:
   GLuint prog() const { return m_prog; }
 
 private:
-  struct Attribute { int location; AttribType type; };
-  struct Uniform { int location; UniformType type; };
+  struct Attribute { int location; AttribType type; bool unused; };
+  struct Uniform { int location; UniformType type; bool unused; };
+
+  /// Whether we built (sucessfully or just yet)
+  bool m_valid;
 
   /// The shader program
   GLuint m_prog;

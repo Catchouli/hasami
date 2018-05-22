@@ -20,16 +20,18 @@ Mesh::Mesh(Renderer& renderer)
   m_buf = std::shared_ptr<hs::Buffer>(renderer.createBuffer());
 }
 
-void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& modelview)
+void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& model, const glm::mat4& obj)
 {
-  glm::mat4 mvp = projection * modelview;
+  glm::mat4 mv = model * obj;
+  glm::mat4 mvp = projection * mv;
 
   // Bind shader
   shader.bind();
 
   // Uniforms
-  shader.setUniform("_mv", UniformType::Mat4, &modelview[0][0]);
-  shader.setUniform("_mvp", UniformType::Mat4, &mvp[0][0]);
+  shader.setUniform("uni_m", UniformType::Mat4, &obj[0][0]);
+  shader.setUniform("uni_mv", UniformType::Mat4, &mv[0][0]);
+  shader.setUniform("uni_mvp", UniformType::Mat4, &mvp[0][0]);
 
   // Enable attributes
   size_t lastOffset = 0;
@@ -44,7 +46,7 @@ void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection,
   renderer.stateManager()->flush();
 
   // Draw buffer
-  m_buf->bind(Buffer::Target::VertexBuffer);
+  m_buf->bind(hs::BufferTarget::VertexBuffer);
   renderer.drawArrays(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()));
 
   // Disable attributes
@@ -55,7 +57,7 @@ void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection,
 
 void Mesh::loadObj(const char* path, Normals normals)
 {
-  const int version = 0;
+  const int version = 1;
 
   size_t versionHash = 0;
   hs::hash_combine(versionHash, version, normals);
@@ -173,13 +175,13 @@ void Mesh::loadObj(const char* path, Normals normals)
   }
 
   // Set buffers
-  m_buf->set((float*)vertexBuf.data(), static_cast<int>(vertexBuf.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), Buffer::Usage::StaticDraw);
+  m_buf->set((float*)vertexBuf.data(), static_cast<int>(vertexBuf.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), BufferUsage::StaticDraw);
 
   // Store attributes
   m_attrib.clear();
-  m_attrib.push_back(Attrib("pos", 3, AttribType::Float));
-  m_attrib.push_back(Attrib("nrm", 3, AttribType::Float));
-  m_attrib.push_back(Attrib("uv", 2, AttribType::Float));
+  m_attrib.push_back(Attrib("in_pos", 3, AttribType::Float));
+  m_attrib.push_back(Attrib("in_nrm", 3, AttribType::Float));
+  m_attrib.push_back(Attrib("in_uv", 2, AttribType::Float));
 
   // Write cache out
   writeCachedObj(cache.c_str(), versionHash, vertexBuf, m_attrib);
@@ -209,7 +211,7 @@ bool Mesh::loadCachedObj(const char* path, size_t versionHash)
     vbuf.push_back(v);
   }
 
-  m_buf->set((float*)vbuf.data(), static_cast<int>(vbuf.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), Buffer::Usage::StaticDraw);
+  m_buf->set((float*)vbuf.data(), static_cast<int>(vbuf.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), BufferUsage::StaticDraw);
 
   int attribSize = -1;
   fread(&attribSize, sizeof(int), 1, fd);

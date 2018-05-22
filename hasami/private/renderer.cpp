@@ -1,5 +1,9 @@
 #include "renderer.hpp"
 
+#define FREEIMAGE_LIB
+#include "FreeImage.h"
+#include "Utilities.h"
+
 namespace hs {
 
 StateManager::StateManager()
@@ -31,6 +35,48 @@ void StateManager::flush()
       applyState(state->top());
     }
   }
+}
+
+bool Texture::load(const char* path)
+{
+  // Initialise freeimage
+  FreeImage_Initialise();
+
+  // Attempt to determine format
+  auto format = FreeImage_GetFIFFromFilename(path);
+  if (format == FIF_UNKNOWN) {
+    fprintf(stderr, "Failed to determine image format for %s\n", path);
+    return false;
+  }
+
+  FIBITMAP* bmp = FreeImage_Load(format, "res/miku.png");
+  if (!bmp) {
+    fprintf(stderr, "Failed to load %s\n", path);
+    return false;
+  }
+
+  FIBITMAP* bmp32 = FreeImage_ConvertTo32Bits(bmp);
+  FreeImage_Unload(bmp);
+  if (!bmp32) {
+    return false;
+  }
+
+  if (!SwapRedBlue32(bmp32)) {
+    fprintf(stderr, "Failed to swap red/blue channels for %s\n", path);
+  }
+
+  // Get texture data
+  void* bits = FreeImage_GetBits(bmp32);
+  int width = FreeImage_GetWidth(bmp32);
+  int height = FreeImage_GetHeight(bmp32);
+
+  // Set texture
+  set(TextureFormat::RGBA8888, width, height, bits);
+
+  // Unload bitmap
+  FreeImage_Unload(bmp32);
+
+  return true;
 }
 
 }

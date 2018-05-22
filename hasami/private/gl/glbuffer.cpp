@@ -3,12 +3,12 @@
 namespace hs {
 namespace gl {
 
-GLenum glUsage(Buffer::Usage usage) {
+GLenum glUsage(hs::BufferUsage usage) {
   // todo: support more
   return GL_STATIC_DRAW;
 }
 
-GLenum glTarget(Buffer::Target target) {
+GLenum glTarget(hs::BufferTarget target) {
   // todo: support more
   return GL_ARRAY_BUFFER;
 }
@@ -25,18 +25,18 @@ Buffer::~Buffer()
   glDeleteBuffers(1, &m_buf);
 }
 
-void Buffer::set(const void* buf, int size, int stride, Buffer::Usage usage)
+void Buffer::set(const void* buf, int size, int stride, hs::BufferUsage usage)
 {
   if (size <= 0)
     return;
 
-  bind(Buffer::Target::VertexBuffer);
+  bind(hs::BufferTarget::VertexBuffer);
   glBufferData(GL_ARRAY_BUFFER, size, buf, glUsage(usage));
   m_size = size;
   m_stride = stride;
 }
 
-void Buffer::bind(Buffer::Target target)
+void Buffer::bind(hs::BufferTarget target)
 {
   // todo: use target
   glBindBuffer(glTarget(target), m_buf);

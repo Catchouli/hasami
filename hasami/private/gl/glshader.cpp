@@ -45,7 +45,15 @@ GLenum attribGlType(AttribType type) {
 Shader::Shader()
   : m_nextAttribLocation(0)
   , m_nextUniformLocation(0)
+  , m_prog(0)
+  , m_valid(false)
 {
+}
+
+Shader::~Shader()
+{
+  if (m_prog != 0)
+    glDeleteProgram(m_prog);
 }
 
 void Shader::load(const char* srcPath)
@@ -57,79 +65,91 @@ void Shader::load(const char* srcPath)
 
   std::string shaderSource = buffer.str();
 
-  m_prog = glCreateProgram();
-
-  std::stringstream vertShaderSS;
-  vertShaderSS << "#version 330" << std::endl;
-  vertShaderSS << "#define BUILDING_VERTEX_SHADER" << std::endl;
-  vertShaderSS << shaderSource;
-  std::string vertShader = vertShaderSS.str();
+  if (m_prog == 0)
+    m_prog = glCreateProgram();
 
   GLint vert = glCreateShader(GL_VERTEX_SHADER);
-  const char* pVertShader[] = { vertShader.c_str() };
-  glShaderSource(vert, 1, pVertShader, nullptr);
-  glCompileShader(vert);
-  GLint vertCompiled;
-  glGetShaderiv(vert, GL_COMPILE_STATUS, &vertCompiled);
-  if (vertCompiled != GL_TRUE) {
-    GLsizei logLen = 0;
-    GLchar msg[1024];
-    glGetShaderInfoLog(vert, 1023, &logLen, msg);
-    fprintf(stderr, "Failed to compile vertex shader: \n%s\n", msg);
-    openInBrowser(genShaderErrorPage(vertShader, msg, "Vertex"));
-    return;
-  }
-
-  std::stringstream fragShaderSS;
-  fragShaderSS << "#version 330" << std::endl;
-  fragShaderSS << "#define BUILDING_FRAGMENT_SHADER" << std::endl;
-  fragShaderSS << shaderSource;
-  std::string fragShader = fragShaderSS.str();
-
   GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
-  const char* pFragShader[] = { fragShader.c_str() };
-  glShaderSource(vert, 1, pFragShader, nullptr);
-  glCompileShader(frag);
-  GLint fragCompiled;
-  glGetShaderiv(frag, GL_COMPILE_STATUS, &fragCompiled);
-  if (fragCompiled != GL_TRUE) {
-    GLsizei logLen = 0;
-    GLchar msg[1024];
-    glGetShaderInfoLog(frag, 1023, &logLen, msg);
-    fprintf(stderr, "Failed to compile fragment shader: \n%s\n", msg);
-    openInBrowser(genShaderErrorPage(fragShader, msg, "Fragment"));
-    return;
+
+  // Set back to false if there's a failure building
+  m_valid = true;
+
+  try {
+    std::stringstream vertShaderSS;
+    vertShaderSS << "#version 330" << std::endl;
+    vertShaderSS << "#define BUILDING_VERTEX_SHADER" << std::endl;
+    vertShaderSS << shaderSource;
+    std::string vertShader = vertShaderSS.str();
+
+    const char* pVertShader[] = { vertShader.c_str() };
+    glShaderSource(vert, 1, pVertShader, nullptr);
+    glCompileShader(vert);
+    GLint vertCompiled;
+    glGetShaderiv(vert, GL_COMPILE_STATUS, &vertCompiled);
+    if (vertCompiled != GL_TRUE) {
+      GLsizei logLen = 0;
+      GLchar msg[1024];
+      glGetShaderInfoLog(vert, 1023, &logLen, msg);
+      fprintf(stderr, "Failed to compile vertex shader: \n%s\n", msg);
+      openInBrowser(genShaderErrorPage(vertShader, msg, "Vertex"));
+      throw std::runtime_error("");
+    }
+
+    std::stringstream fragShaderSS;
+    fragShaderSS << "#version 330" << std::endl;
+    fragShaderSS << "#define BUILDING_FRAGMENT_SHADER" << std::endl;
+    fragShaderSS << shaderSource;
+    std::string fragShader = fragShaderSS.str();
+
+    const char* pFragShader[] = { fragShader.c_str() };
+    glShaderSource(frag, 1, pFragShader, nullptr);
+    glCompileShader(frag);
+    GLint fragCompiled;
+    glGetShaderiv(frag, GL_COMPILE_STATUS, &fragCompiled);
+    if (fragCompiled != GL_TRUE) {
+      GLsizei logLen = 0;
+      GLchar msg[1024];
+      glGetShaderInfoLog(frag, 1023, &logLen, msg);
+      fprintf(stderr, "Failed to compile fragment shader: \n%s\n", msg);
+      openInBrowser(genShaderErrorPage(fragShader, msg, "Fragment"));
+      throw std::runtime_error("");
+    }
+
+    glAttachShader(m_prog, vert);
+    glAttachShader(m_prog, frag);
+    glLinkProgram(m_prog);
+
+    GLint progLinked;
+    glGetProgramiv(m_prog, GL_LINK_STATUS, &progLinked);
+    if (progLinked != GL_TRUE) {
+      GLsizei logLen = 0;
+      GLchar msg[1024];
+      glGetProgramInfoLog(m_prog, 1024, &logLen, msg);
+      fprintf(stderr, "Failed to link program: \n%s\n", msg);
+      throw std::runtime_error("");
+    }
+  }
+  catch(...) {
+    m_valid = false;
   }
 
-  glAttachShader(m_prog, vert);
+  // Clean up shaders
   glDeleteShader(vert);
-  glAttachShader(m_prog, frag);
   glDeleteShader(frag);
-  glLinkProgram(m_prog);
-
-  GLint progLinked;
-  glGetProgramiv(m_prog, GL_LINK_STATUS, &progLinked);
-  if (progLinked != GL_TRUE) {
-    GLsizei logLen = 0;
-    GLchar msg[1024];
-    glGetProgramInfoLog(m_prog, 1024, &logLen, msg);
-    fprintf(stderr, "Failed to link program: \n%s\n", msg);
-    return;
-  }
 
   // Check the attrib/uniform locations
   for (auto& attrib : m_attribs) {
     int loc = glGetAttribLocation(m_prog, attrib.first.c_str());
-    if (loc != attrib.second.location) {
+    attrib.second.unused = (loc == -1);
+    if (attrib.second.unused) {
       fprintf(stderr, "Attribute is unused: %s\n", attrib.first.c_str());
-      attrib.second.location = -1;
     }
   }
   for (auto& uniform : m_uniforms) {
     int loc = glGetUniformLocation(m_prog, uniform.first.c_str());
-    if (loc != uniform.second.location) {
+    uniform.second.unused = (loc == -1);
+    if (uniform.second.unused) {
       fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
-      uniform.second.location = -1;
     }
   }
 }
@@ -147,6 +167,7 @@ std::string Shader::genHeader()
     ss << "layout(location=" << std::to_string(attr.second.location).c_str() << ") in ";
     switch (attr.second.type) {
       case AttribType::Float: ss << "float "; break;
+      case AttribType::Vec2: ss << "vec2 "; break;
       case AttribType::Vec3: ss << "vec3 "; break;
       case AttribType::Vec4: ss << "vec4 "; break;
       default: ss << "unknown "; break;
@@ -162,6 +183,7 @@ std::string Shader::genHeader()
     switch (uniform.second.type) {
       case UniformType::Float: ss << "float "; break;
       case UniformType::Mat4: ss << "mat4 "; break;
+      case UniformType::Sampler2D: ss << "sampler2D "; break;
       default: ss << "unknown "; break;
     }
     ss << uniform.first.c_str() << ";" << std::endl;
@@ -182,44 +204,53 @@ void Shader::unbind()
 
 void Shader::addAttrib(const char* name, AttribType type)
 {
-  m_attribs[name] = Attribute{m_nextAttribLocation++, type};
+  m_attribs[name] = Attribute{m_nextAttribLocation++, type, true};
 }
 
 void Shader::bindAttrib(const char* name, int size, AttribType type, size_t stride, int offset)
 {
   auto it = m_attribs.find(name);
-  if (it != m_attribs.end() && it->second.location != -1) {
+  if (it != m_attribs.end() && !it->second.unused) {
     assert(it->second.location != -1);
     GLenum glType = attribGlType(type);
     glEnableVertexAttribArray(it->second.location);
     glVertexAttribPointer(it->second.location, size, attribGlType(type), GL_FALSE, static_cast<GLsizei>(stride), reinterpret_cast<void*>(static_cast<uintptr_t>(offset)));
+  }
+  else if (it == m_attribs.end()) {
+    fprintf(stderr, "Attempt to bind nonexistent attrib: %s\n", name);
   }
 }
 
 void Shader::unbindAttrib(const char* name)
 {
   auto it = m_attribs.find(name);
-  if (it != m_attribs.end() && it->second.location != -1) {
+  if (it != m_attribs.end() && !it->second.unused) {
     glDisableVertexAttribArray(it->second.location);
   }
 }
 
 void Shader::addUniform(const char* name, UniformType type)
 {
-  m_uniforms[name] = Uniform{m_nextUniformLocation++, type};
+  m_uniforms[name] = Uniform{m_nextUniformLocation++, type, true};
 }
 
 void Shader::setUniform(const char* name, UniformType type, const void* buf)
 {
-  int loc = glGetUniformLocation(m_prog, name);
-
   auto it = m_uniforms.find(name);
-  if (it != m_uniforms.end() && it->second.location != -1) {
+  if (it != m_uniforms.end() && !it->second.unused) {
     switch (type) {
-      case UniformType::Float: glUniform1fv(it->second.location, 1, static_cast<const float*>(buf)); break;;
-      case UniformType::Mat4: glUniformMatrix4fv(it->second.location, 1, GL_FALSE, static_cast<const float*>(buf)); break;;
-      default: assert(false); break;;
+      case UniformType::Float: glUniform1fv(it->second.location, 1, static_cast<const float*>(buf)); break;
+      case UniformType::Mat4: glUniformMatrix4fv(it->second.location, 1, GL_FALSE, static_cast<const float*>(buf)); break;
+      case UniformType::Sampler2D: {
+        TextureUnit ts = *static_cast<const TextureUnit*>(buf);
+        glUniform1i(it->second.location, static_cast<int>(ts));
+        break;
+      }
+      default: assert(false); break;
     }
+  }
+  else if (it == m_uniforms.end()) {
+    fprintf(stderr, "Attempt to bind nonexistent uniform: %s\n", name);
   }
 }
 

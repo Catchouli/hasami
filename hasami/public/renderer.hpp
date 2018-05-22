@@ -36,11 +36,16 @@ class Window;
 class Renderer;
 class Shader;
 class Buffer;
+class Texture;
 class StateManager;
 
-enum class UniformType { Float, Mat4, Unknown };
-enum class AttribType { Float, Vec3, Vec4, Unknown };
+enum class UniformType { Float, Mat4, Sampler2D, Unknown };
+enum class AttribType { Float, Vec2, Vec3, Vec4, Unknown };
 enum class PrimitiveType { Triangles };
+enum class TextureFormat { RGBA8888 };
+enum class TextureUnit { Texture0 };
+enum class BufferTarget { VertexBuffer };
+enum class BufferUsage { StaticDraw };
 
 /// App interface
 /// End users should implement this interface and pass it to a window
@@ -79,6 +84,7 @@ public:
 
   virtual Shader* createShader() = 0;
   virtual Buffer* createBuffer() = 0;
+  virtual Texture* createTexture() = 0;
   virtual StateManager* stateManager() = 0;
   virtual void clear(const glm::vec4& col, bool color, bool depth) = 0;
   virtual void drawArrays(PrimitiveType prim, int start, int count) = 0;
@@ -111,19 +117,16 @@ public:
 /// for initialization.
 class Buffer {
 public:
-  enum class Target { VertexBuffer };
-  enum class Usage { StaticDraw };
+  template <typename T>
+  void set(const std::vector<T>& buf, int stride, BufferUsage usage);
 
   template <typename T>
-  void set(const std::vector<T>& buf, int stride, Usage usage);
-
-  template <typename T>
-  void set(const T* buf, int size, int stride, Usage usage);
+  void set(const T* buf, int size, int stride, BufferUsage usage);
 
   // Interface
 
-  virtual void set(const void* buf, int size, int stride, Usage usage) = 0;
-  virtual void bind(Target target) = 0;
+  virtual void set(const void* buf, int size, int stride, BufferUsage usage) = 0;
+  virtual void bind(BufferTarget target) = 0;
   virtual int stride() = 0;
   virtual int size() = 0;
 };
@@ -131,7 +134,7 @@ public:
 /// A set function that takes a vector<T> and updates the buffer with its
 /// contents
 template <typename T>
-void Buffer::set(const std::vector<T>& buf, int stride, Usage usage)
+void Buffer::set(const std::vector<T>& buf, int stride, BufferUsage usage)
 {
   set((const void*)buf.data(), buf.size() * sizeof(T), stride, usage);
 }
@@ -139,7 +142,7 @@ void Buffer::set(const std::vector<T>& buf, int stride, Usage usage)
 /// A set function that takes a typed array and its size and updates the
 /// buffer with its contents
 template <typename T>
-void Buffer::set(const T* buf, int size, int stride, Usage usage)
+void Buffer::set(const T* buf, int size, int stride, BufferUsage usage)
 {
   set((const void*)buf, size * sizeof(T), stride, usage);
 }
@@ -162,6 +165,19 @@ public:
 private:
   std::map<RenderState::State, std::stack<RenderState>> m_stacks;
   std::set<std::stack<RenderState>*> m_dirtyStates;
+};
+
+/// Texture
+class Texture
+{
+public:
+  /// Load a texture from disk
+  bool load(const char* path);
+
+  // Interface
+
+  virtual void set(TextureFormat f, int width, int height, void* ptr) = 0;
+  virtual void bind(TextureUnit unit) = 0;
 };
 
 }

@@ -21,9 +21,6 @@ SDLWindowBase::SDLWindowBase(bool createGLContext)
   if (createGLContext) {
     SDL_GL_CreateContext(m_win);
   }
-
-  SDL_SetRelativeMouseMode(SDL_TRUE);
-  SDL_SetWindowGrab(m_win, SDL_TRUE);
 }
 
 SDLWindowBase::~SDLWindowBase()
@@ -39,6 +36,10 @@ void SDLWindowBase::run()
     while (SDL_PollEvent(&evt)) {
       if (evt.type == SDL_QUIT) {
         setApp(nullptr);
+      }
+      if (evt.type == SDL_MOUSEBUTTONDOWN) {
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_SetWindowGrab(m_win, SDL_TRUE);
       }
       else if (m_app) {
         m_app->input(&evt);

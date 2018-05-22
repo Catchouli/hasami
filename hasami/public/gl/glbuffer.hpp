@@ -14,8 +14,8 @@ public:
   Buffer();
   ~Buffer();
 
-  void set(const void* buf, int size, int stride, Buffer::Usage usage) override;
-  void bind(Buffer::Target target) override;
+  void set(const void* buf, int size, int stride, hs::BufferUsage usage) override;
+  void bind(hs::BufferTarget target) override;
 
   int size() override { return m_size; }
   int stride() override { return m_stride; }
