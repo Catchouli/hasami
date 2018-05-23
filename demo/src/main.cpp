@@ -2,6 +2,8 @@
 
 #include "gl/sdlwindow.hpp"
 #include "gl/glrenderer.hpp"
+#include "gl/glshader.hpp"
+
 
 int main(int argc, char** argv)
 {
@@ -10,6 +12,7 @@ int main(int argc, char** argv)
     hs::sdl::Window<hs::gl::GLRenderer> window(true);
     Demo app(&window);
     window.setApp(&app);
+    hs::gl::Shader::startShaderWatchThread();
     window.run();
   }
   catch (std::exception& e) {
@@ -17,6 +20,8 @@ int main(int argc, char** argv)
     system("pause");
     return 1;
   }
+
+  hs::gl::Shader::stopShaderWatchThread();
 
   return 0;
 }
