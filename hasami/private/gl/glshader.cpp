@@ -5,6 +5,7 @@
 #include <sstream>
 #include <sstream>
 #include <regex>
+#include ""
 
 void openInBrowser(const std::string& url);
 std::string genShaderErrorPage(const std::string& source, const std::string& errors, const std::string& shaderType);
@@ -41,6 +42,8 @@ GLenum attribGlType(AttribType type) {
     default: assert(false); return static_cast<GLenum>(-1);
   }
 }
+
+std::thread Shader::sm_fileWatchThread;
 
 Shader::Shader()
   : m_nextAttribLocation(0)
@@ -152,6 +155,8 @@ void Shader::load(const char* srcPath)
       fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
     }
   }
+
+  startShaderWatchThread();
 }
 
 std::string Shader::genHeader()
@@ -252,6 +257,17 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
   else if (it == m_uniforms.end()) {
     fprintf(stderr, "Attempt to bind nonexistent uniform: %s\n", name);
   }
+}
+
+void Shader::startShaderWatchThread()
+{
+  if (!sm_fileWatchThread.joinable())
+    sm_fileWatchThread = std::thread(&Shader::shaderWatchThread);
+}
+
+void Shader::shaderWatchThread()
+{
+  printf("im another thread mate\n");
 }
 
 }

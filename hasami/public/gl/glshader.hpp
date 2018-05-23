@@ -6,6 +6,7 @@
 #include <tuple>
 #include <functional>
 #include <typeindex>
+#include <thread>
 
 namespace hs {
 namespace gl {
@@ -47,6 +48,12 @@ public:
   /// Get the program id (deprecated)
   GLuint prog() const { return m_prog; }
 
+  /// Start the shader watch thread
+  static void startShaderWatchThread();
+
+  /// The shader watch thread kernel
+  static void shaderWatchThread();
+
 private:
   struct Attribute { int location; AttribType type; bool unused; };
   struct Uniform { int location; UniformType type; bool unused; };
@@ -68,6 +75,9 @@ private:
 
   /// Shader vars
   std::map<std::string, Uniform> m_uniforms;
+
+  /// The file watch thread
+  static std::thread sm_fileWatchThread;
 };
 
 }

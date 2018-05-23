@@ -25,7 +25,7 @@ add_library(hasami
   public/util.hpp
 )
 
-target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage)
+target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage simplefilewatcher)
 
 target_include_directories(hasami PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>
