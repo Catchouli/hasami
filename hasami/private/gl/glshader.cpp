@@ -5,8 +5,9 @@
 #include <sstream>
 #include <sstream>
 #include <regex>
-#include ""
+#include <chrono>
 
+std::string dirnameOf(const std::string& fname);
 void openInBrowser(const std::string& url);
 std::string genShaderErrorPage(const std::string& source, const std::string& errors, const std::string& shaderType);
 
@@ -43,18 +44,23 @@ GLenum attribGlType(AttribType type) {
   }
 }
 
+bool Shader::sm_runShaderWatch = false;
 std::thread Shader::sm_fileWatchThread;
+std::mutex Shader::sm_fileWatchMutex;
+FW::FileWatcher Shader::sm_fileWatcher;
 
 Shader::Shader()
   : m_nextAttribLocation(0)
   , m_nextUniformLocation(0)
   , m_prog(0)
   , m_valid(false)
+  , m_watchId(static_cast<FW::WatchID>(-1))
 {
 }
 
 Shader::~Shader()
 {
+  removeWatch(m_watchId);
   if (m_prog != 0)
     glDeleteProgram(m_prog);
 }
@@ -156,7 +162,8 @@ void Shader::load(const char* srcPath)
     }
   }
 
-  startShaderWatchThread();
+  removeWatch(m_watchId);
+  m_watchId = addWatch(srcPath);
 }
 
 std::string Shader::genHeader()
@@ -259,15 +266,52 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
   }
 }
 
+FW::WatchID Shader::addWatch(const char* filepath)
+{
+  std::string fp = filepath;
+  std::string dirname = dirnameOf(fp);
+  std::lock_guard<std::mutex> lock(sm_fileWatchMutex);
+  return sm_fileWatcher.addWatch("", nullptr);
+}
+
+void Shader::removeWatch(FW::WatchID id)
+{
+  if (id != static_cast<FW::WatchID>(-1)) {
+    sm_fileWatcher.removeWatch(id);
+  }
+}
+
 void Shader::startShaderWatchThread()
 {
-  if (!sm_fileWatchThread.joinable())
-    sm_fileWatchThread = std::thread(&Shader::shaderWatchThread);
+  std::lock_guard<std::mutex> lock(sm_fileWatchMutex);
+  if (sm_runShaderWatch)
+    return;
+
+  sm_runShaderWatch = true;
+  sm_fileWatchThread = std::thread(&Shader::shaderWatchThread);
+}
+
+void Shader::stopShaderWatchThread()
+{
+  sm_fileWatchMutex.lock();
+  if (!sm_runShaderWatch) {
+    sm_fileWatchMutex.unlock();
+    return;
+  }
+  sm_runShaderWatch = false;
+  sm_fileWatchMutex.unlock();
+  sm_fileWatchThread.join();
 }
 
 void Shader::shaderWatchThread()
 {
-  printf("im another thread mate\n");
+  while (true) {
+    std::lock_guard<std::mutex> lock(sm_fileWatchMutex);
+    if (!sm_runShaderWatch)
+      break;
+    sm_fileWatcher.update();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  }
 }
 
 }
@@ -386,4 +430,10 @@ std::string genShaderErrorPage(const std::string& source, const std::string& err
   file << "</script>" << std::endl;
 
   return filename;
+}
+
+std::string dirnameOf(const std::string& fname)
+{
+  size_t pos = fname.find_last_of("\\/");
+  return (std::string::npos == pos) ? "" : fname.substr(0, pos);
 }

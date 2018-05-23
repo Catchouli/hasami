@@ -2,11 +2,14 @@
 
 #include "renderer.hpp"
 #include "glad/glad.h"
+#include <string>
 #include <map>
 #include <tuple>
 #include <functional>
 #include <typeindex>
 #include <thread>
+#include <mutex>
+#include <FileWatcher/FileWatcher.h>
 
 namespace hs {
 namespace gl {
@@ -47,9 +50,18 @@ public:
 
   /// Get the program id (deprecated)
   GLuint prog() const { return m_prog; }
+  
+  /// Add a watch for a filename
+  static FW::WatchID addWatch(const char* filepath);
+
+  /// Remove a watch
+  static void removeWatch(FW::WatchID id);
 
   /// Start the shader watch thread
   static void startShaderWatchThread();
+
+  /// Stop the shader watch thread and join it
+  static void stopShaderWatchThread();
 
   /// The shader watch thread kernel
   static void shaderWatchThread();
@@ -76,8 +88,20 @@ private:
   /// Shader vars
   std::map<std::string, Uniform> m_uniforms;
 
+  /// The watch id for this shader
+  FW::WatchID m_watchId;
+
+  /// Whether the shader watch thread should be running
+  static bool sm_runShaderWatch;
+
   /// The file watch thread
   static std::thread sm_fileWatchThread;
+
+  /// File watch mutex
+  static std::mutex sm_fileWatchMutex;
+
+  /// File watch system
+  static FW::FileWatcher sm_fileWatcher;
 };
 
 }
