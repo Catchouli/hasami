@@ -103,6 +103,7 @@ public:
   // Interface
 
   virtual void load(const char* srcPath) = 0;
+  virtual bool valid() = 0;
   virtual void bind() = 0;
   virtual void unbind() = 0;
   virtual void addAttrib(const char* name, AttribType type) = 0;

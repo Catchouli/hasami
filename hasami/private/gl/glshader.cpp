@@ -7,7 +7,10 @@
 #include <regex>
 #include <chrono>
 
+#include "filewatchservice.hpp"
+
 std::string dirnameOf(const std::string& fname);
+std::string filenameOf(const std::string& fname);
 void openInBrowser(const std::string& url);
 std::string genShaderErrorPage(const std::string& source, const std::string& errors, const std::string& shaderType);
 
@@ -44,44 +47,104 @@ GLenum attribGlType(AttribType type) {
   }
 }
 
-bool Shader::sm_runShaderWatch = false;
-std::thread Shader::sm_fileWatchThread;
-std::mutex Shader::sm_fileWatchMutex;
-FW::FileWatcher Shader::sm_fileWatcher;
-
 Shader::Shader()
   : m_nextAttribLocation(0)
   , m_nextUniformLocation(0)
-  , m_prog(0)
-  , m_valid(false)
-  , m_watchId(static_cast<FW::WatchID>(-1))
+  , m_dirty(false)
 {
 }
 
+struct CachedShaderInternal
+  : public CachedShader
+{
+  CachedShaderInternal(GLuint prog, size_t hash) : CachedShader(prog, hash) {}
+  std::set<const Shader*> m_refs;
+};
+
+class ShaderCache
+{
+public:
+  /// Acquires a shader program for a given hash, the dirty flag describes whether it's been built yet
+  static CachedShader acquireProgram(size_t hash, const Shader* who) {
+    auto it = sm_programs.find(hash);
+    if (it == sm_programs.end()) {
+      sm_programs.insert(std::make_pair(hash, CachedShaderInternal(glCreateProgram(), hash)));
+      it = sm_programs.find(hash);
+    }
+    it->second.m_refs.insert(who);
+    return static_cast<CachedShader>(it->second);
+  }
+
+  /// Releases a shader program so it can be deleted when nothing is using it anymore
+  static void releaseProgram(size_t hash, const Shader* who) {
+    auto it = sm_programs.find(hash);
+    if (it != sm_programs.end()) {
+      it->second.m_refs.erase(who);
+      if (it->second.m_refs.empty()) {
+        glDeleteProgram(it->second.m_prog);
+        sm_programs.erase(it);
+      }
+    }
+  }
+
+private:
+  static std::map<size_t, CachedShaderInternal> sm_programs;
+};
+
+std::map<size_t, CachedShaderInternal> ShaderCache::sm_programs;
+
 Shader::~Shader()
 {
-  removeWatch(m_watchId);
-  if (m_prog != 0)
-    glDeleteProgram(m_prog);
+  FileWatchService::Instance().removeWatch(this);
+  if (m_cachedShader.has_value())
+    ShaderCache::releaseProgram(m_cachedShader->m_hash, this);
 }
 
 void Shader::load(const char* srcPath)
 {
+  m_filepath = srcPath;
+  m_filename = filenameOf(srcPath);
+  m_dirty = true;
+}
+
+void Shader::loadFromFile(const char* srcPath)
+{
+  m_filepath = srcPath;
+  m_filename = filenameOf(srcPath);
+
   std::ifstream t(srcPath);
   std::stringstream buffer;
   buffer << genHeader();
   buffer << t.rdbuf();
 
   std::string shaderSource = buffer.str();
+  auto shaderHash = std::hash<std::string>()(shaderSource);
 
-  if (m_prog == 0)
-    m_prog = glCreateProgram();
+  printf("Loading shader %s (%zx)\n", m_filename.c_str(), shaderHash);
+
+  if (m_cachedShader.has_value())
+    ShaderCache::releaseProgram(m_cachedShader->m_hash, this);
+  m_cachedShader = ShaderCache::acquireProgram(shaderHash, this);
+
+  if (m_cachedShader->m_dirty) {
+    m_cachedShader->m_dirty = false;
+    build(shaderSource);
+  }
+
+  FileWatchService::Instance().removeWatch(this);
+  std::string shaderDir = dirnameOf(srcPath);
+  FileWatchService::Instance().addWatch(shaderDir.c_str(), this);
+}
+
+void Shader::build(const std::string& shaderSource)
+{
+  auto prog = m_cachedShader->m_prog;
 
   GLint vert = glCreateShader(GL_VERTEX_SHADER);
   GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
 
-  // Set back to false if there's a failure building
-  m_valid = true;
+  // Set back if there's a failure building
+  m_cachedShader->m_valid = true;
 
   try {
     std::stringstream vertShaderSS;
@@ -124,22 +187,22 @@ void Shader::load(const char* srcPath)
       throw std::runtime_error("");
     }
 
-    glAttachShader(m_prog, vert);
-    glAttachShader(m_prog, frag);
-    glLinkProgram(m_prog);
+    glAttachShader(m_cachedShader->m_prog, vert);
+    glAttachShader(m_cachedShader->m_prog, frag);
+    glLinkProgram(m_cachedShader->m_prog);
 
     GLint progLinked;
-    glGetProgramiv(m_prog, GL_LINK_STATUS, &progLinked);
+    glGetProgramiv(m_cachedShader->m_prog, GL_LINK_STATUS, &progLinked);
     if (progLinked != GL_TRUE) {
       GLsizei logLen = 0;
       GLchar msg[1024];
-      glGetProgramInfoLog(m_prog, 1024, &logLen, msg);
+      glGetProgramInfoLog(m_cachedShader->m_prog, 1024, &logLen, msg);
       fprintf(stderr, "Failed to link program: \n%s\n", msg);
       throw std::runtime_error("");
     }
   }
   catch(...) {
-    m_valid = false;
+    m_cachedShader->m_valid = false;
   }
 
   // Clean up shaders
@@ -148,22 +211,19 @@ void Shader::load(const char* srcPath)
 
   // Check the attrib/uniform locations
   for (auto& attrib : m_attribs) {
-    int loc = glGetAttribLocation(m_prog, attrib.first.c_str());
+    int loc = glGetAttribLocation(m_cachedShader->m_prog, attrib.first.c_str());
     attrib.second.unused = (loc == -1);
     if (attrib.second.unused) {
       fprintf(stderr, "Attribute is unused: %s\n", attrib.first.c_str());
     }
   }
   for (auto& uniform : m_uniforms) {
-    int loc = glGetUniformLocation(m_prog, uniform.first.c_str());
+    int loc = glGetUniformLocation(m_cachedShader->m_prog, uniform.first.c_str());
     uniform.second.unused = (loc == -1);
     if (uniform.second.unused) {
       fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
     }
   }
-
-  removeWatch(m_watchId);
-  m_watchId = addWatch(srcPath);
 }
 
 std::string Shader::genHeader()
@@ -206,7 +266,12 @@ std::string Shader::genHeader()
 
 void Shader::bind()
 {
-  glUseProgram(m_prog);
+  if ((m_dirty || m_cachedShader->m_dirty) && !m_filepath.empty()) {
+    m_dirty = false;
+    loadFromFile(m_filepath.c_str());
+  }
+
+  glUseProgram(m_cachedShader->m_prog);
 }
 
 void Shader::unbind()
@@ -266,51 +331,11 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
   }
 }
 
-FW::WatchID Shader::addWatch(const char* filepath)
+void Shader::handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action)
 {
-  std::string fp = filepath;
-  std::string dirname = dirnameOf(fp);
-  std::lock_guard<std::mutex> lock(sm_fileWatchMutex);
-  return sm_fileWatcher.addWatch("", nullptr);
-}
-
-void Shader::removeWatch(FW::WatchID id)
-{
-  if (id != static_cast<FW::WatchID>(-1)) {
-    sm_fileWatcher.removeWatch(id);
-  }
-}
-
-void Shader::startShaderWatchThread()
-{
-  std::lock_guard<std::mutex> lock(sm_fileWatchMutex);
-  if (sm_runShaderWatch)
-    return;
-
-  sm_runShaderWatch = true;
-  sm_fileWatchThread = std::thread(&Shader::shaderWatchThread);
-}
-
-void Shader::stopShaderWatchThread()
-{
-  sm_fileWatchMutex.lock();
-  if (!sm_runShaderWatch) {
-    sm_fileWatchMutex.unlock();
-    return;
-  }
-  sm_runShaderWatch = false;
-  sm_fileWatchMutex.unlock();
-  sm_fileWatchThread.join();
-}
-
-void Shader::shaderWatchThread()
-{
-  while (true) {
-    std::lock_guard<std::mutex> lock(sm_fileWatchMutex);
-    if (!sm_runShaderWatch)
-      break;
-    sm_fileWatcher.update();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  if (filename == m_filename) {
+    m_dirty = true;
+    m_cachedShader->m_dirty = true;
   }
 }
 
@@ -436,4 +461,10 @@ std::string dirnameOf(const std::string& fname)
 {
   size_t pos = fname.find_last_of("\\/");
   return (std::string::npos == pos) ? "" : fname.substr(0, pos);
+}
+
+std::string filenameOf(const std::string& fname)
+{
+  size_t pos = fname.find_last_of("\\/");
+  return (std::string::npos == pos || pos >= fname.size()) ? fname : fname.substr(pos+1);
 }

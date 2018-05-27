@@ -24,6 +24,7 @@ Demo::Demo(hs::Window* window)
   m_shader->addUniform("uni_mv", UniformType::Mat4);
   m_shader->addUniform("uni_mvp", UniformType::Mat4);
   m_shader->addUniform("sampler_diffuse", UniformType::Sampler2D);
+  m_shader->addUniform("uni_time", UniformType::Float);
   m_shader->load("res/basic.glsl");
 
   m_scenegraph = std::make_shared<AssemblyNode>();

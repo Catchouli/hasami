@@ -12,6 +12,8 @@ add_library(hasami
   private/camera.cpp
   public/mesh.hpp
   private/mesh.cpp
+  public/filewatchservice.hpp
+  private/filewatchservice.cpp
   public/gl/sdlwindow.hpp
   private/gl/sdlwindow.cpp
   public/gl/glbuffer.hpp

@@ -29,9 +29,12 @@ void Mesh::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection,
   shader.bind();
 
   // Uniforms
+  static float i = 0;
+  i += 0.017f;
   shader.setUniform("uni_m", UniformType::Mat4, &obj[0][0]);
   shader.setUniform("uni_mv", UniformType::Mat4, &mv[0][0]);
   shader.setUniform("uni_mvp", UniformType::Mat4, &mvp[0][0]);
+  shader.setUniform("uni_time", UniformType::Float, &i);
 
   // Enable attributes
   size_t lastOffset = 0;
