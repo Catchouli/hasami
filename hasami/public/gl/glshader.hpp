@@ -9,20 +9,40 @@
 #include <typeindex>
 #include <thread>
 #include <mutex>
+#include <deque>
+#include <optional.hpp>
 #include <FileWatcher/FileWatcher.h>
 
 namespace hs {
 namespace gl {
 
+struct CachedShader
+{
+  CachedShader(GLuint prog, size_t hash) : m_prog(prog), m_hash(hash), m_dirty(true), m_valid(false) {}
+  GLuint m_prog;
+  size_t m_hash;
+  bool m_dirty;
+  bool m_valid;
+};
+
 class Shader
-  : public hs::Shader
+  : public hs::Shader, public FW::FileWatchListener
 {
 public:
   Shader();
   ~Shader();
 
-  /// Load a glsl shader
+  /// Set the file path for this glsl shader (deferred load on bind)
   void load(const char* srcPath) override;
+
+  /// Load a shader from disk - immediately loads and builds the shader unlike load()
+  void loadFromFile(const char* srcPath);
+
+  /// Whether this shader is valid
+  bool valid() override { return m_cachedShader.has_value() && m_cachedShader->m_valid; }
+
+  /// Build a shader from source
+  void build(const std::string& shaderSource);
 
   /// Generate the header for this shader
   std::string genHeader();
@@ -48,33 +68,26 @@ public:
   /// Set a uniform value
   void setUniform(const char* name, UniformType type, const void* buf) override;
 
-  /// Get the program id (deprecated)
-  GLuint prog() const { return m_prog; }
-  
-  /// Add a watch for a filename
-  static FW::WatchID addWatch(const char* filepath);
-
-  /// Remove a watch
-  static void removeWatch(FW::WatchID id);
-
-  /// Start the shader watch thread
-  static void startShaderWatchThread();
-
-  /// Stop the shader watch thread and join it
-  static void stopShaderWatchThread();
-
-  /// The shader watch thread kernel
-  static void shaderWatchThread();
+  /// Handle file changes
+  virtual void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action) override;
 
 private:
   struct Attribute { int location; AttribType type; bool unused; };
   struct Uniform { int location; UniformType type; bool unused; };
 
-  /// Whether we built (sucessfully or just yet)
-  bool m_valid;
+  /// Whether *this shader* is dirty (not the underlying cached shader)
+  /// This gets set whenever an attribute/uniform is added or enabled/disabled
+  /// And indicates that the shader should be reloaded from source
+  bool m_dirty;
+
+  /// The filename for reloading
+  std::string m_filepath;
+
+  /// The filename only from the file path
+  std::string m_filename;
 
   /// The shader program
-  GLuint m_prog;
+  std::optional<CachedShader> m_cachedShader;
 
   /// Next attribute location
   int m_nextAttribLocation;
@@ -87,21 +100,6 @@ private:
 
   /// Shader vars
   std::map<std::string, Uniform> m_uniforms;
-
-  /// The watch id for this shader
-  FW::WatchID m_watchId;
-
-  /// Whether the shader watch thread should be running
-  static bool sm_runShaderWatch;
-
-  /// The file watch thread
-  static std::thread sm_fileWatchThread;
-
-  /// File watch mutex
-  static std::mutex sm_fileWatchMutex;
-
-  /// File watch system
-  static FW::FileWatcher sm_fileWatcher;
 };
 
 }
