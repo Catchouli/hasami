@@ -40,16 +40,20 @@ void SceneNode::removeChild(std::shared_ptr<SceneNode> node)
 AssemblyNode::AssemblyNode()
   : m_localDirty(false)
   , m_scale(1.0f, 1.0f, 1.0f)
+  , m_enabled(true)
 {
 }
 
-void AssemblyNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& parent)
+void AssemblyNode::draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& parent)
 {
+  if (!m_enabled)
+    return;
+
   updateTransform();
   glm::mat4 object = parent * m_local;
 
   for (auto child : children()) {
-    child->draw(renderer, shader, projection, view, object);
+    child->draw(renderer, mat, projection, view, object);
   }
 }
 
@@ -66,7 +70,7 @@ void AssemblyNode::updateTransform()
   m_local = translation * rotation * scale;
 }
 
-void ModelNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object)
+void ModelNode::draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object)
 {
   // todo: acquire samplers
   // todo: abstract this somehow, it should really be done by the same code that's in Mesh::Draw
@@ -74,13 +78,11 @@ void ModelNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projec
   if (m_tex) {
     TextureUnit unit = TextureUnit::Texture0;
     m_tex->bind(unit);
-    bool err = renderer.checkError();
-    shader.bind();
-    shader.setUniform("sampler_diffuse", UniformType::Sampler2D, &unit);
-    bool err2 = renderer.checkError();
+    mat.albedo.set(unit);
+    mat.bind();
   }
   if (m_mesh) {
-    m_mesh->draw(renderer, shader, projection, view, object);
+    m_mesh->draw(renderer, mat, projection, view, object);
   }
 }
 

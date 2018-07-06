@@ -11,17 +11,23 @@ FPSCamera::FPSCamera()
   , m_up(0.0, 1.0, 0.0)
   , m_camSpeed(1.0f)
   , m_camSensitivity(1.0f)
+  , m_lockCamera(false)
 {
 }
 
 void FPSCamera::mouseMove(int x, int y)
 {
-  m_rot.y += x;
-  m_rot.x += y;
+  if (!m_lockCamera) {
+    m_rot.y += x;
+    m_rot.x += y;
+  }
 }
 
 void FPSCamera::update(float timeDelta, const uint8_t* keyStates)
 {
+  if (m_lockCamera)
+    return;
+
   glm::mat4 camRotX = glm::rotate(glm::mat4(), m_rot.x * m_camSensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
   glm::mat4 camRotY = glm::rotate(glm::mat4(), m_rot.y * m_camSensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
   glm::mat4 camRot = camRotX * camRotY;

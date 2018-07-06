@@ -2,10 +2,10 @@
 
 namespace hs {
 
-void GlobeNode::draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& obj)
+void GlobeNode::draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& obj)
 {
   generate(renderer, glm::vec3(0.0f, 0.0f, 3.0f));
-  ModelNode::draw(renderer, shader, projection, view, obj);
+  ModelNode::draw(renderer, mat, projection, view, obj);
 }
 
 void GlobeNode::generate(Renderer& renderer, const glm::vec3& center)

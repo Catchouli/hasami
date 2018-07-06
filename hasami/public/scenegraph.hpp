@@ -3,6 +3,7 @@
 #include <set>
 #include <memory>
 
+#include "standardmaterial.hpp"
 #include "mesh.hpp"
 
 #include "matrix.hpp"
@@ -23,7 +24,7 @@ public:
 
   const std::set<std::shared_ptr<SceneNode>>& children() { return m_children; }
 
-  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) = 0;
+  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) = 0;
 
   std::shared_ptr<SceneNode> ptr() { return shared_from_this(); }
 
@@ -41,10 +42,11 @@ class AssemblyNode
 public:
   AssemblyNode();
 
-  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
+  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
 
   void dirtyLocal() { m_localDirty = true; }
 
+  bool m_enabled;
   glm::vec3 m_pos;
   glm::quat m_rot;
   glm::vec3 m_scale;
@@ -60,7 +62,7 @@ class ModelNode
   : public SceneNode
 {
 public:
-  virtual void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
+  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
 
   std::shared_ptr<Mesh> m_mesh;
   std::shared_ptr<Texture> m_tex;
