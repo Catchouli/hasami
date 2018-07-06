@@ -56,6 +56,8 @@ public:
   void addUniforms(std::vector<ShaderVar*> vars);
 
   void bind();
+  void flush();
+  void unbind();
 
   hs::Shader* shader() const { return m_shader.get(); }
 

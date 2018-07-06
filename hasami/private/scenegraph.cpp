@@ -79,7 +79,6 @@ void ModelNode::draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4&
     TextureUnit unit = TextureUnit::Texture0;
     m_tex->bind(unit);
     mat.albedo.set(unit);
-    mat.bind();
   }
   if (m_mesh) {
     m_mesh->draw(renderer, mat, projection, view, object);

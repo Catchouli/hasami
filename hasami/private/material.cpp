@@ -45,11 +45,22 @@ void Material::addUniforms(std::vector<ShaderVar*> vars)
   }
 }
 
-void Material::bind()
+void Material::flush()
 {
+  m_shader->bind();
   for (auto& var : m_vars) {
     var->update();
   }
+}
+
+void Material::bind()
+{
+  flush();
+}
+
+void Material::unbind()
+{
+
 }
 
 }
