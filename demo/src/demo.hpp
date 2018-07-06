@@ -4,6 +4,7 @@
 #include "mesh.hpp"
 #include "scenegraph.hpp"
 #include "camera.hpp"
+#include "standardmaterial.hpp"
 
 #include <memory>
 
@@ -21,7 +22,7 @@ private:
 
   std::shared_ptr<hs::FPSCamera> m_camera;
 
-  std::shared_ptr<hs::Shader> m_shader;
+  std::shared_ptr<hs::StandardMaterial> m_mat;
 
   std::shared_ptr<hs::SceneNode> m_scenegraph;
   std::shared_ptr<hs::AssemblyNode> m_buddha;

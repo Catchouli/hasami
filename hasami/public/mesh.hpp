@@ -5,6 +5,7 @@
 #include <matrix.hpp>
 #include "optional.hpp"
 #include "renderer.hpp"
+#include "standardmaterial.hpp"
 
 namespace hs {
 
@@ -33,7 +34,7 @@ public:
   void loadObj(const char* path, Normals normals);
   bool loadCachedObj(const char* path, size_t versionHash);
   void writeCachedObj(const char* path, size_t versionHash, const std::vector<Vertex>& vbuf, const std::vector<Attrib>& attribs);
-  void draw(Renderer& renderer, Shader& shader, const glm::mat4& projection, const glm::mat4& model, const glm::mat4& obj);
+  void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& model, const glm::mat4& obj);
 
   std::shared_ptr<hs::Buffer> m_buf;
   std::vector<Attrib> m_attrib;

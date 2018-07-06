@@ -16,16 +16,7 @@ Demo::Demo(hs::Window* window)
   m_camera->m_camSensitivity = 0.001f;
   m_camera->m_pos.z = 1.5f;
 
-  m_shader = std::shared_ptr<hs::Shader>(window->renderer()->createShader());
-  m_shader->addAttrib("in_pos", AttribType::Vec3);
-  m_shader->addAttrib("in_nrm", AttribType::Vec3);
-  m_shader->addAttrib("in_uv", AttribType::Vec2);
-  m_shader->addUniform("uni_m", UniformType::Mat4);
-  m_shader->addUniform("uni_mv", UniformType::Mat4);
-  m_shader->addUniform("uni_mvp", UniformType::Mat4);
-  m_shader->addUniform("sampler_diffuse", UniformType::Sampler2D);
-  m_shader->addUniform("uni_time", UniformType::Float);
-  m_shader->load("res/basic.glsl");
+  m_mat = std::make_shared<hs::StandardMaterial>(window->renderer(), "res/basic.glsl");
 
   m_scenegraph = std::make_shared<AssemblyNode>();
 
@@ -62,6 +53,9 @@ void Demo::input(const SDL_Event* evt)
   if (evt->type == SDL_MOUSEMOTION) {
     m_camera->mouseMove(evt->motion.xrel, evt->motion.yrel);
   }
+  if (evt->type == SDL_KEYDOWN && evt->key.keysym.scancode == SDL_SCANCODE_F1) {
+    m_camera->m_lockCamera = !m_camera->m_lockCamera;
+  }
 }
 
 void Demo::render(hs::Window* window)
@@ -70,9 +64,14 @@ void Demo::render(hs::Window* window)
 
   auto* keyStates = SDL_GetKeyboardState(nullptr);
 
+  m_mat->time.set(time);
+
+  //m_mat->shader()->setUniform("uni_time", hs::UniformType::Float, &time);
+
+  // The orbiting miku
+  //m_orbitPivot->m_enabled = false;
   m_orbitPivot->m_rot = glm::rotate(glm::quat(), -time * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
   m_orbitPivot->dirtyLocal();
-
   m_orbitMiku->m_pos.x = -1.5f;
   m_orbitMiku->m_pos.y = -0.5f;
   m_orbitMiku->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -83,10 +82,8 @@ void Demo::render(hs::Window* window)
   m_camera->update(0.016f, keyStates);
 
   // Rotate buddha
-  m_buddha->m_pos.y = -1.0f;
-  m_buddha->m_scale = glm::vec3(0.02f, 0.02f, 0.02f);
-  m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
-  m_buddha->m_rot *= glm::rotate(glm::quat(), time, glm::vec3(0.0f, 1.0f, 0.0f));
+  m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+  //m_buddha->m_rot *= glm::rotate(glm::quat(), time, glm::vec3(0.0f, 1.0f, 0.0f));
   m_buddha->dirtyLocal();
 
   // Start render
@@ -99,8 +96,7 @@ void Demo::render(hs::Window* window)
   stateManager->pushState(hs::ClearColor(glm::vec4(0.0f)));
   stateManager->pushState(hs::PolygonMode(hs::RenderState::PolygonMode::Fill));
 
-  if (m_shader)
-    m_scenegraph->draw(*window->renderer(), *m_shader, m_camera->projMat(), m_camera->viewMat(), glm::mat4());
+  m_scenegraph->draw(*window->renderer(), *m_mat, m_camera->projMat(), m_camera->viewMat(), glm::mat4());
 
   stateManager->popState(hs::DepthTest());
   stateManager->popState(hs::CullFace());

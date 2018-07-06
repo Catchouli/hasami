@@ -22,6 +22,7 @@ public:
 
   glm::vec3 m_pos;
   glm::vec2 m_rot;
+  bool m_lockCamera;
 
 private:
   glm::mat4 m_proj;
