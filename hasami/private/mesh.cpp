@@ -27,13 +27,13 @@ void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const glm::mat4& 
   glm::mat4 mv = model * obj;
   glm::mat4 mvp = projection * mv;
 
-  // Bind shader
-  shader.bind();
+  // Set uniforms
+  mat.m.set(obj);
+  mat.mv.set(mv);
+  mat.mvp.set(mvp);
 
-  // Uniforms
-  shader.setUniform("uni_m", UniformType::Mat4, &obj[0][0]);
-  shader.setUniform("uni_mv", UniformType::Mat4, &mv[0][0]);
-  shader.setUniform("uni_mvp", UniformType::Mat4, &mvp[0][0]);
+  // Bind shader
+  mat.flush();
 
   // Enable attributes
   size_t lastOffset = 0;
