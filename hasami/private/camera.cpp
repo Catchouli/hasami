@@ -55,7 +55,7 @@ void FPSCamera::update(float timeDelta, const uint8_t* keyStates)
     m_pos -= m_up * m_camSpeed;
   }
 
-  m_proj = glm::perspective(3.141f / 2.0f, 1.0f, 0.001f, 50.0f);
+  m_proj = glm::perspective(3.141f / 2.0f, 1.0f, 0.01f, 1000.0f);
   m_view = camRot * glm::translate(glm::mat4(), -m_pos);
 }
 

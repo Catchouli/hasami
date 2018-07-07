@@ -49,7 +49,7 @@ bool Texture::load(const char* path)
     return false;
   }
 
-  FIBITMAP* bmp = FreeImage_Load(format, "res/miku.png");
+  FIBITMAP* bmp = FreeImage_Load(format, path);
   if (!bmp) {
     fprintf(stderr, "Failed to load %s\n", path);
     return false;
