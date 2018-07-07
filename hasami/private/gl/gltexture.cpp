@@ -34,10 +34,7 @@ void Texture::set(TextureFormat f, int width, int height, void* ptr)
 
 void Texture::bind(TextureUnit unit)
 {
-  switch (unit) {
-    case TextureUnit::Texture0: glActiveTexture(GL_TEXTURE0); return;
-    default: assert(false); return;
-  }
+  glActiveTexture(GL_TEXTURE0 + (int)unit);
   glBindTexture(m_target, m_id);
 }
 

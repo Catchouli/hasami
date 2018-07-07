@@ -2,6 +2,7 @@
 
 #include "scenegraph.hpp"
 #include "standardmaterial.hpp"
+#include "mesh.hpp"
 
 namespace hs {
 
@@ -9,7 +10,7 @@ class GlobeNode
   : public ModelNode
 {
 public:
-  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& obj) override;
+  virtual void draw(Renderer& renderer, const Context& ctx) override;
 
 private:
   void generate(Renderer& renderer, const glm::vec3& center);

@@ -22,10 +22,12 @@ private:
 
   std::shared_ptr<hs::FPSCamera> m_camera;
 
+  std::shared_ptr<hs::Texture> m_tex;
   std::shared_ptr<hs::StandardMaterial> m_mat;
 
   std::shared_ptr<hs::SceneNode> m_scenegraph;
   std::shared_ptr<hs::AssemblyNode> m_buddha;
+  std::shared_ptr<hs::ModelNode> m_buddhaModel;
   std::shared_ptr<hs::AssemblyNode> m_orbitPivot;
   std::shared_ptr<hs::AssemblyNode> m_orbitMiku;
   std::shared_ptr<hs::AssemblyNode> m_globe;

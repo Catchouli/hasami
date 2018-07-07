@@ -20,15 +20,15 @@ Mesh::Mesh(Renderer& renderer)
   m_buf = std::shared_ptr<hs::Buffer>(renderer.createBuffer());
 }
 
-void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& model, const glm::mat4& obj)
+void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const Context& ctx)
 {
   auto& shader = *mat.shader();
 
-  glm::mat4 mv = model * obj;
-  glm::mat4 mvp = projection * mv;
+  glm::mat4 mv = ctx.m_view * ctx.m_object;
+  glm::mat4 mvp = ctx.m_projection * mv;
 
   // Set uniforms
-  mat.m.set(obj);
+  mat.m.set(ctx.m_object);
   mat.mv.set(mv);
   mat.mvp.set(mvp);
 

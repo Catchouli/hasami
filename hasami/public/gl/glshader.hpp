@@ -19,6 +19,7 @@ namespace gl {
 struct CachedShader
 {
   CachedShader(GLuint prog, size_t hash) : m_prog(prog), m_hash(hash), m_dirty(true), m_valid(false) {}
+
   GLuint m_prog;
   size_t m_hash;
   bool m_dirty;
@@ -39,7 +40,7 @@ public:
   void loadFromFile(const char* srcPath);
 
   /// Whether this shader is valid
-  bool valid() override { return m_cachedShader.has_value() && m_cachedShader->m_valid; }
+  bool valid() override { return m_cachedShader.has_value() && m_cachedShader.value()->m_valid; }
 
   /// Build a shader from source
   void build(const std::string& shaderSource);
@@ -68,12 +69,15 @@ public:
   /// Set a uniform value
   void setUniform(const char* name, UniformType type, const void* buf) override;
 
+  /// Set a uniform to be enabled or disabled
+  void setUniformEnabled(const char* name, bool enabled) override;
+
   /// Handle file changes
   virtual void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action) override;
 
 private:
   struct Attribute { int location; AttribType type; bool unused; };
-  struct Uniform { int location; UniformType type; bool unused; };
+  struct Uniform { int location; UniformType type; bool unused; bool enabled; };
 
   /// Whether *this shader* is dirty (not the underlying cached shader)
   /// This gets set whenever an attribute/uniform is added or enabled/disabled
@@ -87,7 +91,7 @@ private:
   std::string m_filename;
 
   /// The shader program
-  std::optional<CachedShader> m_cachedShader;
+  std::optional<CachedShader*> m_cachedShader;
 
   /// Next attribute location
   int m_nextAttribLocation;
