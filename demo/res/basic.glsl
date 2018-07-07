@@ -8,7 +8,7 @@ void main()
   gl_Position = uni_mvp * vec4(in_pos, 1.0);
   // wave
   gl_Position.x += 0.5 * sin(gl_Position.y * 1.0 + uni_time) * 0.1;
-  var_nrm = normalize((mat3(uni_m)) * in_nrm);
+  var_nrm = normalize((mat3(uni_model)) * in_nrm);
   var_uv = in_uv;
 }
 

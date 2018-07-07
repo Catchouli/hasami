@@ -28,12 +28,16 @@ void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const Context& ct
   glm::mat4 mvp = ctx.m_projection * mv;
 
   // Set uniforms
-  mat.m.set(ctx.m_object);
-  mat.mv.set(mv);
+  mat.model.set(ctx.m_object);
+  mat.view.set(ctx.m_view);
+  mat.projection.set(ctx.m_projection);
   mat.mvp.set(mvp);
 
   // Bind shader
   mat.flush();
+
+  // Bind mesh buffer
+  m_buf->bind(hs::BufferTarget::VertexBuffer);
 
   // Enable attributes
   size_t lastOffset = 0;
@@ -47,8 +51,7 @@ void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const Context& ct
   // Flush state
   renderer.stateManager()->flush();
 
-  // Draw buffer
-  m_buf->bind(hs::BufferTarget::VertexBuffer);
+  // Draw mesh
   renderer.drawArrays(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()));
 
   // Disable attributes

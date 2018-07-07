@@ -10,8 +10,9 @@ class StandardMaterial
 {
 public:
   ShaderVarT<float> time = {"uni_time", 0.0f};
-  ShaderVarT<glm::mat4> m = {"uni_m", glm::mat4()};
-  ShaderVarT<glm::mat4> mv = {"uni_mv", glm::mat4()};
+  ShaderVarT<glm::mat4> model = {"uni_model", glm::mat4()};
+  ShaderVarT<glm::mat4> view = {"uni_view", glm::mat4()};
+  ShaderVarT<glm::mat4> projection = {"uni_projection", glm::mat4()};
   ShaderVarT<glm::mat4> mvp = {"uni_mvp", glm::mat4()};
   Sampler albedo = {"sampler_albedo"};
 
@@ -22,7 +23,7 @@ public:
     shader()->addAttrib("in_nrm", hs::AttribType::Vec3);
     shader()->addAttrib("in_uv", hs::AttribType::Vec2);
 
-    addUniforms({&time, &m, &mv, &mvp});
+    addUniforms({&time, &model, &view, &projection, &mvp});
     addSamplers({&albedo});
   }
 };

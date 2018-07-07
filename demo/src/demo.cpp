@@ -18,24 +18,44 @@ Demo::Demo(hs::Window* window)
   m_camera->m_pos.z = 1.5f;
 
   // Create skybox
+  auto skyboxTex = std::shared_ptr<hs::Texture>(window->renderer()->createTexture());
+  skyboxTex->load("res/sky.jpg");
   auto skyboxMat = std::make_shared<hs::StandardMaterial>(window->renderer(), "res/skybox.glsl");
+  skyboxMat->albedo.set(skyboxTex);
 
   // Create root node of scenegraph
   m_scenegraph = std::make_shared<AssemblyNode>();
 
+  // Create skybox
+  auto skybox = std::make_shared<AssemblyNode>();
+  skybox->setParent(m_scenegraph);
+  skybox->m_scale = glm::vec3(10.0f);
+  skybox->dirtyLocal();
+
+  auto skyboxModel = std::make_shared<ModelNode>();
+  skyboxModel->setParent(skybox);
+  skyboxModel->m_mesh = std::make_shared<Mesh>(*window->renderer());
+  skyboxModel->m_mesh->loadObj("res/sphere.obj", Mesh::Normals::Smooth);
+  skyboxModel->m_mat = skyboxMat;
+
   // Create main model
   m_buddha = std::make_shared<AssemblyNode>();
   m_buddha->setParent(m_scenegraph);
+
+  m_tex = std::shared_ptr<hs::Texture>(window->renderer()->createTexture());
+  m_tex->load("res/sky.png");
 
   m_buddhaModel = std::make_shared<ModelNode>();
   m_buddhaModel->setParent(m_buddha);
   m_buddhaModel->m_mesh = std::make_shared<Mesh>(*window->renderer());
   m_buddhaModel->m_mesh->loadObj("res/miku.obj", Mesh::Normals::Smooth);
   m_buddhaModel->m_mat = std::make_shared<hs::StandardMaterial>(window->renderer(), "res/basic.glsl");
+  m_buddhaModel->m_mat->albedo.set(m_tex);
 
   // Create the orbit and orbiting model
   m_orbitPivot = std::make_shared<AssemblyNode>();
-  m_orbitPivot->setParent(m_scenegraph);
+  //m_orbitPivot->setParent(m_scenegraph);
+  m_orbitPivot->m_enabled = false;
 
   m_orbitMiku = std::make_shared<AssemblyNode>();
   m_orbitMiku->setParent(m_orbitPivot);
@@ -53,10 +73,6 @@ Demo::Demo(hs::Window* window)
   globeModel->setParent(m_globe);
 
   m_globe->m_enabled = false;
-
-  // Load miku texture (for use in render())
-  m_tex = std::shared_ptr<hs::Texture>(window->renderer()->createTexture());
-  m_tex->load("res/miku.png");
 }
 
 void Demo::input(const SDL_Event* evt)
@@ -75,10 +91,12 @@ void Demo::render(hs::Window* window)
 
   // Cycle texture on/off every couple of seconds
   bool even = (fmod(time, 2.0f) < 0.99f);
-  m_buddhaModel->m_mat->albedo.set(even ? m_tex : nullptr);
+  //m_buddhaModel->m_mat->albedo.set(even ? m_tex : nullptr);
+  //m_buddhaModel->m_mat->albedo.set(m_tex);
 
   // The orbiting miku
   //m_orbitPivot->m_enabled = false;
+  /*
   m_orbitPivot->m_rot = glm::rotate(glm::quat(), -time * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
   m_orbitPivot->dirtyLocal();
   m_orbitMiku->m_pos.x = -1.5f;
@@ -86,10 +104,12 @@ void Demo::render(hs::Window* window)
   m_orbitMiku->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
   m_orbitMiku->m_scale = glm::vec3(0.02f, 0.02f, 0.02f);
   m_orbitMiku->dirtyLocal();
+  */
 
   // Rotate buddha
   m_buddha->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
   //m_buddha->m_rot *= glm::rotate(glm::quat(), time, glm::vec3(0.0f, 1.0f, 0.0f));
+  m_buddha->m_scale = glm::vec3(0.02f, 0.02f, 0.02f) * (1.0f+0.2f*sin(time));
   m_buddha->dirtyLocal();
 
   // Update camera
