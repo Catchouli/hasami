@@ -65,14 +65,14 @@ class ShaderCache
 {
 public:
   /// Acquires a shader program for a given hash, the dirty flag describes whether it's been built yet
-  static CachedShader acquireProgram(size_t hash, const Shader* who) {
+  static CachedShader* acquireProgram(size_t hash, const Shader* who) {
     auto it = sm_programs.find(hash);
     if (it == sm_programs.end()) {
       sm_programs.insert(std::make_pair(hash, CachedShaderInternal(glCreateProgram(), hash)));
       it = sm_programs.find(hash);
     }
     it->second.m_refs.insert(who);
-    return static_cast<CachedShader>(it->second);
+    return &it->second;
   }
 
   /// Releases a shader program so it can be deleted when nothing is using it anymore
@@ -80,12 +80,15 @@ public:
     auto it = sm_programs.find(hash);
     if (it != sm_programs.end()) {
       it->second.m_refs.erase(who);
-      if (it->second.m_refs.empty()) {
+      if (sm_deleteUnused && it->second.m_refs.empty()) {
         glDeleteProgram(it->second.m_prog);
         sm_programs.erase(it);
       }
     }
   }
+
+  /// Whether to delete shader cores when they're no longer in use
+  static const bool sm_deleteUnused = false;
 
 private:
   static std::map<size_t, CachedShaderInternal> sm_programs;
@@ -97,7 +100,7 @@ Shader::~Shader()
 {
   FileWatchService::Instance().removeWatch(this);
   if (m_cachedShader.has_value())
-    ShaderCache::releaseProgram(m_cachedShader->m_hash, this);
+    ShaderCache::releaseProgram(m_cachedShader.value()->m_hash, this);
 }
 
 void Shader::load(const char* srcPath)
@@ -123,12 +126,28 @@ void Shader::loadFromFile(const char* srcPath)
   printf("Loading shader %s (%zx)\n", m_filename.c_str(), shaderHash);
 
   if (m_cachedShader.has_value())
-    ShaderCache::releaseProgram(m_cachedShader->m_hash, this);
+    ShaderCache::releaseProgram(m_cachedShader.value()->m_hash, this);
   m_cachedShader = ShaderCache::acquireProgram(shaderHash, this);
 
-  if (m_cachedShader->m_dirty) {
-    m_cachedShader->m_dirty = false;
+  if (m_cachedShader.value()->m_dirty) {
+    m_cachedShader.value()->m_dirty = false;
     build(shaderSource);
+  }
+
+  // Check the attrib/uniform locations
+  for (auto& attrib : m_attribs) {
+    int loc = glGetAttribLocation(m_cachedShader.value()->m_prog, attrib.first.c_str());
+    attrib.second.unused = (loc == -1);
+    if (attrib.second.unused) {
+      fprintf(stderr, "Attribute is unused: %s\n", attrib.first.c_str());
+    }
+  }
+  for (auto& uniform : m_uniforms) {
+    int loc = glGetUniformLocation(m_cachedShader.value()->m_prog, uniform.first.c_str());
+    uniform.second.unused = (loc == -1);
+    if (uniform.second.unused) {
+      fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
+    }
   }
 
   FileWatchService::Instance().removeWatch(this);
@@ -138,13 +157,15 @@ void Shader::loadFromFile(const char* srcPath)
 
 void Shader::build(const std::string& shaderSource)
 {
-  auto prog = m_cachedShader->m_prog;
+  printf("Building shader\n");
+
+  auto prog = m_cachedShader.value()->m_prog;
 
   GLint vert = glCreateShader(GL_VERTEX_SHADER);
   GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
 
   // Set back if there's a failure building
-  m_cachedShader->m_valid = true;
+  m_cachedShader.value()->m_valid = true;
 
   try {
     std::stringstream vertShaderSS;
@@ -187,43 +208,27 @@ void Shader::build(const std::string& shaderSource)
       throw std::runtime_error("");
     }
 
-    glAttachShader(m_cachedShader->m_prog, vert);
-    glAttachShader(m_cachedShader->m_prog, frag);
-    glLinkProgram(m_cachedShader->m_prog);
+    glAttachShader(m_cachedShader.value()->m_prog, vert);
+    glAttachShader(m_cachedShader.value()->m_prog, frag);
+    glLinkProgram(m_cachedShader.value()->m_prog);
 
     GLint progLinked;
-    glGetProgramiv(m_cachedShader->m_prog, GL_LINK_STATUS, &progLinked);
+    glGetProgramiv(m_cachedShader.value()->m_prog, GL_LINK_STATUS, &progLinked);
     if (progLinked != GL_TRUE) {
       GLsizei logLen = 0;
       GLchar msg[1024];
-      glGetProgramInfoLog(m_cachedShader->m_prog, 1024, &logLen, msg);
+      glGetProgramInfoLog(m_cachedShader.value()->m_prog, 1024, &logLen, msg);
       fprintf(stderr, "Failed to link program: \n%s\n", msg);
       throw std::runtime_error("");
     }
   }
   catch(...) {
-    m_cachedShader->m_valid = false;
+    m_cachedShader.value()->m_valid = false;
   }
 
   // Clean up shaders
   glDeleteShader(vert);
   glDeleteShader(frag);
-
-  // Check the attrib/uniform locations
-  for (auto& attrib : m_attribs) {
-    int loc = glGetAttribLocation(m_cachedShader->m_prog, attrib.first.c_str());
-    attrib.second.unused = (loc == -1);
-    if (attrib.second.unused) {
-      fprintf(stderr, "Attribute is unused: %s\n", attrib.first.c_str());
-    }
-  }
-  for (auto& uniform : m_uniforms) {
-    int loc = glGetUniformLocation(m_cachedShader->m_prog, uniform.first.c_str());
-    uniform.second.unused = (loc == -1);
-    if (uniform.second.unused) {
-      fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
-    }
-  }
 }
 
 std::string Shader::genHeader()
@@ -250,7 +255,8 @@ std::string Shader::genHeader()
 
   // Uniforms
   for (auto& uniform : m_uniforms) {
-    ss << "#define UNI_" << uniform.first << std::endl;
+    if (uniform.second.enabled)
+      ss << "#define UNI_" << uniform.first << std::endl;
     ss << "layout(location=" << std::to_string(uniform.second.location).c_str() << ") uniform ";
     switch (uniform.second.type) {
       case UniformType::Float: ss << "float "; break;
@@ -266,12 +272,12 @@ std::string Shader::genHeader()
 
 void Shader::bind()
 {
-  if ((m_dirty || m_cachedShader->m_dirty) && !m_filepath.empty()) {
+  if ((m_dirty || m_cachedShader.value()->m_dirty) && !m_filepath.empty()) {
     m_dirty = false;
     loadFromFile(m_filepath.c_str());
   }
 
-  glUseProgram(m_cachedShader->m_prog);
+  glUseProgram(m_cachedShader.value()->m_prog);
 }
 
 void Shader::unbind()
@@ -308,7 +314,7 @@ void Shader::unbindAttrib(const char* name)
 
 void Shader::addUniform(const char* name, UniformType type)
 {
-  m_uniforms[name] = Uniform{m_nextUniformLocation++, type, true};
+  m_uniforms[name] = Uniform{m_nextUniformLocation++, type, true, true};
 }
 
 void Shader::setUniform(const char* name, UniformType type, const void* buf)
@@ -331,11 +337,22 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
   }
 }
 
+void Shader::setUniformEnabled(const char* name, bool enabled)
+{
+  auto it = m_uniforms.find(name);
+  if (it != m_uniforms.end()) {
+    if (it->second.enabled != enabled) {
+      it->second.enabled = enabled;
+      m_dirty = true;
+    }
+  }
+}
+
 void Shader::handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action)
 {
   if (filename == m_filename) {
     m_dirty = true;
-    m_cachedShader->m_dirty = true;
+    m_cachedShader.value()->m_dirty = true;
   }
 }
 

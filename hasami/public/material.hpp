@@ -6,11 +6,6 @@ namespace hs {
 
 class Material;
 
-struct TexUnit
-{
-  int m_unit = 0;
-};
-
 class ShaderVar
 {
 public:
@@ -22,6 +17,8 @@ public:
 
   void create(Material* mat);
   void update();
+
+  const char* name() const { return m_name.c_str(); }
 
   virtual void* valPtr() const = 0;
   virtual hs::UniformType valTy() const = 0;
@@ -40,11 +37,30 @@ public:
   ShaderVarT(const char* name, T val);
   void set(const T& val);
 
+  const T& val() const { return m_val; }
+
   void* valPtr() const override { return (void*)&m_val; };
   hs::UniformType valTy() const override { static_assert(false, "ShaderVarT not implemented for this type"); };
 
 private:
   T m_val;
+};
+
+class Sampler
+{
+public:
+  Sampler(const char* name);
+
+  void create(Material* mat, TextureUnit unit);
+
+  void set(std::shared_ptr<hs::Texture> tex) { m_tex = tex; }
+
+  hs::Texture* tex() { return m_tex.get(); }
+  ShaderVarT<TextureUnit>& var() { return m_var; }
+
+private:
+  std::shared_ptr<hs::Texture> m_tex;
+  ShaderVarT<TextureUnit> m_var;
 };
 
 class Material
@@ -54,16 +70,18 @@ public:
 
   void addUniform(ShaderVar* var);
   void addUniforms(std::vector<ShaderVar*> vars);
+  void addSampler(Sampler* sampler);
+  void addSamplers(std::vector<Sampler*> samplers);
 
-  void bind();
   void flush();
-  void unbind();
 
   hs::Shader* shader() const { return m_shader.get(); }
 
 private:
   std::shared_ptr<hs::Shader> m_shader;
   std::vector<ShaderVar*> m_vars;
+  std::vector<Sampler*> m_samplers;
+  TextureUnit m_units;
 };
 
 /* ShaderVarT */

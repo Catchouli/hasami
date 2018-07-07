@@ -3,14 +3,23 @@
 #include <set>
 #include <memory>
 
-#include "standardmaterial.hpp"
-#include "mesh.hpp"
-
+#include "renderer.hpp"
 #include "matrix.hpp"
 #include "vec3.hpp"
 #include "gtc/quaternion.hpp"
 
 namespace hs {
+
+class Mesh;
+class StandardMaterial;
+
+struct Context
+{
+  float m_time = 0.0f;
+  glm::mat4 m_projection;
+  glm::mat4 m_view;
+  glm::mat4 m_object;
+};
 
 class SceneNode
   : public std::enable_shared_from_this<SceneNode>
@@ -24,7 +33,7 @@ public:
 
   const std::set<std::shared_ptr<SceneNode>>& children() { return m_children; }
 
-  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) = 0;
+  virtual void draw(Renderer& renderer, const Context& ctx) = 0;
 
   std::shared_ptr<SceneNode> ptr() { return shared_from_this(); }
 
@@ -42,7 +51,7 @@ class AssemblyNode
 public:
   AssemblyNode();
 
-  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
+  virtual void draw(Renderer& renderer, const Context& ctx) override;
 
   void dirtyLocal() { m_localDirty = true; }
 
@@ -62,10 +71,10 @@ class ModelNode
   : public SceneNode
 {
 public:
-  virtual void draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object) override;
+  virtual void draw(Renderer& renderer, const Context& ctx) override;
 
   std::shared_ptr<Mesh> m_mesh;
-  std::shared_ptr<Texture> m_tex;
+  std::shared_ptr<StandardMaterial> m_mat;
 };
 
 }

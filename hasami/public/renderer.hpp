@@ -43,7 +43,7 @@ enum class UniformType { Float, Mat4, Sampler2D, Unknown };
 enum class AttribType { Float, Vec2, Vec3, Vec4, Unknown };
 enum class PrimitiveType { Triangles };
 enum class TextureFormat { RGBA8888 };
-enum class TextureUnit { Texture0 };
+enum class TextureUnit { Texture0, Texture1, Texture2, Texture3, Texture4, Texture5, Texture6, Texture7, Texture_Max };
 enum class BufferTarget { VertexBuffer };
 enum class BufferUsage { StaticDraw };
 
@@ -111,6 +111,7 @@ public:
   virtual void unbindAttrib(const char* name) = 0;
   virtual void addUniform(const char* name, UniformType type) = 0;
   virtual void setUniform(const char* name, UniformType type, const void* buf) = 0;
+  virtual void setUniformEnabled(const char* name, bool enabled) = 0;
 };
 
 /// Buffer interface

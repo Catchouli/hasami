@@ -23,6 +23,7 @@ out vec4 fragColor;
 void main()
 {
   vec4 col = vec4(1.0, 1.0, 1.0, 0.0);
+  
 #ifdef UNI_sampler_albedo
   vec3 albedo = texture(sampler_albedo, var_uv).rgb;
 #else

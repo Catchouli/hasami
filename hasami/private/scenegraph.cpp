@@ -3,6 +3,8 @@
 #include "gtx/quaternion.hpp"
 #include "gtc/matrix_transform.hpp"
 
+#include "mesh.hpp"
+
 namespace hs {
 
 SceneNode::SceneNode()
@@ -44,16 +46,18 @@ AssemblyNode::AssemblyNode()
 {
 }
 
-void AssemblyNode::draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& parent)
+void AssemblyNode::draw(Renderer& renderer, const Context& ctx)
 {
   if (!m_enabled)
     return;
 
   updateTransform();
-  glm::mat4 object = parent * m_local;
+
+  Context newCtx = ctx;
+  newCtx.m_object = ctx.m_object * m_local;
 
   for (auto child : children()) {
-    child->draw(renderer, mat, projection, view, object);
+    child->draw(renderer, newCtx);
   }
 }
 
@@ -70,18 +74,10 @@ void AssemblyNode::updateTransform()
   m_local = translation * rotation * scale;
 }
 
-void ModelNode::draw(Renderer& renderer, StandardMaterial& mat, const glm::mat4& projection, const glm::mat4& view, const glm::mat4& object)
+void ModelNode::draw(Renderer& renderer, const Context& ctx)
 {
-  // todo: acquire samplers
-  // todo: abstract this somehow, it should really be done by the same code that's in Mesh::Draw
-  //       it needs some Material type to manage the shader and what uniforms it has and what's bound
-  if (m_tex) {
-    TextureUnit unit = TextureUnit::Texture0;
-    m_tex->bind(unit);
-    mat.albedo.set(unit);
-  }
-  if (m_mesh) {
-    m_mesh->draw(renderer, mat, projection, view, object);
+  if (m_mesh && m_mat) {
+    m_mesh->draw(renderer, *m_mat, ctx);
   }
 }
 
