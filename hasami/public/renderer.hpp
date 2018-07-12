@@ -86,7 +86,7 @@ public:
   virtual Buffer* createBuffer() = 0;
   virtual Texture* createTexture() = 0;
   virtual StateManager* stateManager() = 0;
-  virtual void clear(const glm::vec4& col, bool color, bool depth) = 0;
+  virtual void clear(bool color, bool depth) = 0;
   virtual void drawArrays(PrimitiveType prim, int start, int count) = 0;
   virtual bool checkError() = 0;
 };

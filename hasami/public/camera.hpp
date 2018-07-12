@@ -7,15 +7,23 @@
 
 namespace hs {
 
+class Camera
+{
+public:
+  virtual const glm::mat4& projMat() const = 0;
+  virtual const glm::mat4& viewMat() const = 0;
+};
+
 class FPSCamera
+  : public Camera
 {
 public:
   FPSCamera();
   void mouseMove(int x, int y);
   void update(float timeDelta, const uint8_t* keyStates);
 
-  const glm::mat4& projMat() { return m_proj; }
-  const glm::mat4& viewMat() { return m_view; }
+  const glm::mat4& projMat() const override { return m_proj; }
+  const glm::mat4& viewMat() const override { return m_view; }
 
   float m_camSpeed;
   float m_camSensitivity;

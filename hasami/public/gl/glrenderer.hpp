@@ -14,7 +14,7 @@ public:
   hs::Texture* createTexture() override;
   hs::StateManager* stateManager() override { return m_stateManager.get(); }
   void drawArrays(PrimitiveType prim, int start, int count) override;
-  void clear(const glm::vec4& col, bool color, bool depth) override;
+  void clear(bool color, bool depth) override;
   bool checkError() override;
 
 private:
