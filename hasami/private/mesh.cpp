@@ -92,9 +92,9 @@ void Mesh::loadObj(const char* path, Normals normals)
   std::map<size_t, std::vector<size_t>> vertexFaces;
 
   if (normals == Normals::Flat || normals == Normals::Smooth) {
-    size_t offset = 0;
-    size_t face = 0;
     for (const auto& shape : shapes) {
+      size_t offset = 0;
+      size_t face = 0;
       for (const auto& verts : shape.mesh.num_face_vertices) {
         if (verts != 3) {
           printf("Polygon with more or less than 3 sides detected in obj model, skipping\n");
@@ -144,9 +144,9 @@ void Mesh::loadObj(const char* path, Normals normals)
   }
 
   // Convert to non-indexed buffer (we need to concatenate the vertices together anyway)
-  size_t offset = 0;
-  size_t face = 0;
   for (const auto& shape : shapes) {
+    size_t offset = 0;
+    size_t face = 0;
     for (const auto& verts : shape.mesh.num_face_vertices) {
       if (verts != 3) {
         printf("Polygon with more or less than 3 sides detected in obj model, skipping\n");

@@ -15,6 +15,16 @@ SceneNode::~SceneNode()
 {
 }
 
+void SceneNode::addState(const RenderState& state)
+{
+  m_stateset[state.m_state] = state;
+}
+
+void SceneNode::removeState(const RenderState& state)
+{
+  m_stateset.erase(state.m_state);
+}
+
 void SceneNode::setParent(std::shared_ptr<SceneNode> newParent)
 {
   if (m_parent)
@@ -22,6 +32,45 @@ void SceneNode::setParent(std::shared_ptr<SceneNode> newParent)
   m_parent = newParent;
   if (m_parent)
     m_parent->addChild(ptr());
+}
+
+void SceneNode::render(Renderer& renderer, const Camera& camera, const RenderParams& params)
+{
+  // Push states
+  pushStates(renderer);
+
+  // Clear screen
+  if (params.m_clearColorBuf || params.m_clearDepthBuf)
+    renderer.clear(params.m_clearColorBuf, params.m_clearDepthBuf);
+
+  // Construct context
+  hs::Context ctx;
+  ctx.m_time = params.m_time;
+  ctx.m_projection = camera.projMat();
+  ctx.m_view = camera.viewMat();
+  ctx.m_object = glm::mat4();
+
+  // Draw scenegraph
+  draw(renderer, ctx);
+
+  // Pop states
+  popStates(renderer);
+}
+
+void SceneNode::pushStates(Renderer& renderer)
+{
+  auto* stateManager = renderer.stateManager();
+  for (const auto& state : m_stateset) {
+    stateManager->pushState(state.second);
+  }
+}
+
+void SceneNode::popStates(Renderer& renderer)
+{
+  auto* stateManager = renderer.stateManager();
+  for (const auto& state : m_stateset) {
+    stateManager->popState(state.second);
+  }
 }
 
 void SceneNode::addChild(std::shared_ptr<SceneNode> node)
@@ -51,14 +100,23 @@ void AssemblyNode::draw(Renderer& renderer, const Context& ctx)
   if (!m_enabled)
     return;
 
+  // Push states
+  pushStates(renderer);
+
+  // Update transform if dirty
   updateTransform();
 
+  // Update object transform
   Context newCtx = ctx;
   newCtx.m_object = ctx.m_object * m_local;
 
+  // Traverse into children
   for (auto child : children()) {
     child->draw(renderer, newCtx);
   }
+
+  // Pop states
+  popStates(renderer);
 }
 
 void AssemblyNode::updateTransform()

@@ -1,10 +1,13 @@
 #pragma once
 
 #include <set>
+#include <map>
 #include <memory>
 
 #include "renderer.hpp"
+#include "camera.hpp"
 #include "matrix.hpp"
+#include "renderstate.hpp"
 #include "vec3.hpp"
 #include "gtc/quaternion.hpp"
 
@@ -12,6 +15,13 @@ namespace hs {
 
 class Mesh;
 class StandardMaterial;
+
+struct RenderParams
+{
+  float m_time = 0.0f;
+  bool m_clearColorBuf = true;
+  bool m_clearDepthBuf = true;
+};
 
 struct Context
 {
@@ -27,15 +37,28 @@ class SceneNode
 public:
   SceneNode();
   ~SceneNode();
+  
+  /// Add a state to the stateset
+  void addState(const RenderState& state);
+
+  /// Remove a state from the stateset
+  void removeState(const RenderState& state);
 
   void setParent(std::shared_ptr<SceneNode> newParent);
   std::shared_ptr<SceneNode> parent() { return m_parent; }
 
   const std::set<std::shared_ptr<SceneNode>>& children() { return m_children; }
 
+  /// Render the scene from the given camera with the given parameters
+  void render(Renderer& renderer, const Camera& camera, const RenderParams& params);
+
   virtual void draw(Renderer& renderer, const Context& ctx) = 0;
 
   std::shared_ptr<SceneNode> ptr() { return shared_from_this(); }
+
+protected:
+  void pushStates(Renderer& renderer);
+  void popStates(Renderer& renderer);
 
 private:
   void addChild(std::shared_ptr<SceneNode> node);
@@ -43,6 +66,8 @@ private:
 
   std::shared_ptr<SceneNode> m_parent;
   std::set<std::shared_ptr<SceneNode>> m_children;
+
+  std::map<hs::RenderState::State, hs::RenderState> m_stateset;
 };
 
 class AssemblyNode
@@ -51,9 +76,11 @@ class AssemblyNode
 public:
   AssemblyNode();
 
-  virtual void draw(Renderer& renderer, const Context& ctx) override;
-
+  /// Dirty the local transform to have it update next time it's needed
   void dirtyLocal() { m_localDirty = true; }
+
+  /// SceneNode::draw
+  virtual void draw(Renderer& renderer, const Context& ctx) override;
 
   bool m_enabled;
   glm::vec3 m_pos;

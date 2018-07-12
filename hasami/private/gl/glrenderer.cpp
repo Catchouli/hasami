@@ -48,9 +48,8 @@ void GLRenderer::drawArrays(PrimitiveType prim, int start, int count)
   glDrawArrays(glPrimType(prim), start, count);
 }
 
-void GLRenderer::clear(const glm::vec4& col, bool color, bool depth)
+void GLRenderer::clear(bool color, bool depth)
 {
-  glClearColor(col.x, col.y, col.z, col.w);
   glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
 }
 
