@@ -10,6 +10,13 @@ GLenum glUsage(hs::BufferUsage usage) {
 
 GLenum glTarget(hs::BufferTarget target) {
   // todo: support more
+  if (target == hs::BufferTarget::VertexBuffer)
+    return GL_ARRAY_BUFFER;
+  else if (target == hs::BufferTarget::IndexBuffer)
+    return GL_ELEMENT_ARRAY_BUFFER;
+
+  // unimplemented
+  assert(false);
   return GL_ARRAY_BUFFER;
 }
 

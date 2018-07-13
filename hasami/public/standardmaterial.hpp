@@ -1,6 +1,7 @@
 #pragma once
 #include "renderer.hpp"
 #include "material.hpp"
+#include "constants.hpp"
 
 namespace hs
 {
@@ -19,9 +20,10 @@ public:
   StandardMaterial(hs::Renderer* renderer, const char* shaderPath)
     : Material(renderer, shaderPath)
   {
-    shader()->addAttrib("in_pos", hs::AttribType::Vec3);
-    shader()->addAttrib("in_nrm", hs::AttribType::Vec3);
-    shader()->addAttrib("in_uv", hs::AttribType::Vec2);
+    shader()->addAttrib(Attrib_pos, hs::AttribType::Vec3);
+    shader()->addAttrib(Attrib_nrm, hs::AttribType::Vec3);
+    shader()->addAttrib(Attrib_tex0, hs::AttribType::Vec2);
+    shader()->addAttrib(Attrib_col, hs::AttribType::Float);
 
     addUniforms({&time, &model, &view, &projection, &mvp});
     addSamplers({&albedo});

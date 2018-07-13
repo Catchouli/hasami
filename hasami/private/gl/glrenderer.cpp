@@ -17,6 +17,20 @@ int glPrimType(PrimitiveType prim) {
   }
 }
 
+int glIndexFormat(IndexFormat format) {
+  switch (format) {
+    case IndexFormat::U16: return GL_UNSIGNED_SHORT;
+    default: assert(false); return 0;
+  }
+}
+
+int glIndexFormatSize(IndexFormat format) {
+  switch (format) {
+    case IndexFormat::U16: return 2;
+    default: assert(false); return 0;
+  }
+}
+
 
 GLRenderer::GLRenderer()
 {
@@ -46,6 +60,12 @@ hs::Texture* GLRenderer::createTexture()
 void GLRenderer::drawArrays(PrimitiveType prim, int start, int count)
 {
   glDrawArrays(glPrimType(prim), start, count);
+}
+
+void GLRenderer::drawIndexed(PrimitiveType prim, int start, int count, hs::IndexFormat indexFormat)
+{
+  uintptr_t ptr = start*glIndexFormatSize(indexFormat);
+  glDrawElements(glPrimType(prim), count, glIndexFormat(indexFormat), (void*)ptr);
 }
 
 void GLRenderer::clear(bool color, bool depth)
@@ -81,6 +101,7 @@ void StateManager::applyState(const RenderState& renderState)
     case RenderState::State::CullFace: { (mpark::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_CULL_FACE); } break;
     case RenderState::State::ClearColor: { const auto& v = mpark::get<glm::vec4>(renderState.m_val); glClearColor(v.x, v.y, v.z, v.w); } break;
     case RenderState::State::PolygonMode: { glPolygonMode(GL_FRONT_AND_BACK, glPolyMode(mpark::get<RenderState::PolygonMode>(renderState.m_val))); } break;
+    case RenderState::State::AlphaBlend: { (mpark::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); } break;
     default: assert(false); break;
   }
 }

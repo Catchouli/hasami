@@ -14,6 +14,7 @@ public:
   hs::Texture* createTexture() override;
   hs::StateManager* stateManager() override { return m_stateManager.get(); }
   void drawArrays(PrimitiveType prim, int start, int count) override;
+  void drawIndexed(PrimitiveType prim, int start, int count, hs::IndexFormat indexFormat) override;
   void clear(bool color, bool depth) override;
   bool checkError() override;
 

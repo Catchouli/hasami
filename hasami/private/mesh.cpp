@@ -15,9 +15,15 @@ int typeSize(AttribType type) {
   }
 }
 
-Mesh::Mesh(Renderer& renderer)
+Mesh::Mesh(Renderer& renderer, bool indexed)
+  : m_indexed(indexed)
+  , m_start(0)
+  , m_count(0)
+  , m_indexFormat(IndexFormat::U16)
 {
   m_buf = std::shared_ptr<hs::Buffer>(renderer.createBuffer());
+  if (indexed)
+    m_ibuf = std::shared_ptr<hs::Buffer>(renderer.createBuffer());
 }
 
 void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const Context& ctx)
@@ -39,6 +45,10 @@ void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const Context& ct
   // Bind mesh buffer
   m_buf->bind(hs::BufferTarget::VertexBuffer);
 
+  // Bind index buffer
+  if (m_indexed)
+    m_ibuf->bind(hs::BufferTarget::IndexBuffer);
+
   // Enable attributes
   size_t lastOffset = 0;
   for (auto& attr : m_attrib) {
@@ -52,7 +62,10 @@ void Mesh::draw(Renderer& renderer, hs::StandardMaterial& mat, const Context& ct
   renderer.stateManager()->flush();
 
   // Draw mesh
-  renderer.drawArrays(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()));
+  if (m_indexed)
+    renderer.drawIndexed(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()), m_indexFormat);
+  else
+    renderer.drawArrays(PrimitiveType::Triangles, 0, static_cast<int>(m_buf->size()));
 
   // Disable attributes
   for (auto& attr : m_attrib) {
@@ -184,9 +197,9 @@ void Mesh::loadObj(const char* path, Normals normals)
 
   // Store attributes
   m_attrib.clear();
-  m_attrib.push_back(Attrib("in_pos", 3, AttribType::Float));
-  m_attrib.push_back(Attrib("in_nrm", 3, AttribType::Float));
-  m_attrib.push_back(Attrib("in_uv", 2, AttribType::Float));
+  m_attrib.push_back(Attrib(Attrib_pos, 3, AttribType::Float));
+  m_attrib.push_back(Attrib(Attrib_nrm, 3, AttribType::Float));
+  m_attrib.push_back(Attrib(Attrib_tex0, 2, AttribType::Float));
 
   // Write cache out
   writeCachedObj(cache.c_str(), versionHash, vertexBuf, m_attrib);

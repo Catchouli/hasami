@@ -36,22 +36,22 @@ void FPSCamera::update(float timeDelta, const uint8_t* keyStates)
   m_left = glm::vec3(-1.0f, 0.0f, 0.0f) * glm::mat3(camRot);
   m_up = glm::vec3(0.0f, 1.0f, 0.0f) * glm::mat3(camRot);
 
-  if (keyStates[SDL_SCANCODE_W]) {
+  if (keyStates && keyStates[SDL_SCANCODE_W]) {
     m_pos += m_forward * m_camSpeed;
   }
-  if (keyStates[SDL_SCANCODE_S]) {
+  if (keyStates && keyStates[SDL_SCANCODE_S]) {
     m_pos -= m_forward * m_camSpeed;
   }
-  if (keyStates[SDL_SCANCODE_A]) {
+  if (keyStates && keyStates[SDL_SCANCODE_A]) {
     m_pos += m_left * m_camSpeed;
   }
-  if (keyStates[SDL_SCANCODE_D]) {
+  if (keyStates && keyStates[SDL_SCANCODE_D]) {
     m_pos -= m_left * m_camSpeed;
   }
-  if (keyStates[SDL_SCANCODE_E]) {
+  if (keyStates && keyStates[SDL_SCANCODE_E]) {
     m_pos += m_up * m_camSpeed;
   }
-  if (keyStates[SDL_SCANCODE_Q]) {
+  if (keyStates && keyStates[SDL_SCANCODE_Q]) {
     m_pos -= m_up * m_camSpeed;
   }
 
