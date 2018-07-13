@@ -17,9 +17,9 @@ void GlobeNode::generate(Renderer& renderer, const glm::vec3& center)
     m_mesh = std::make_shared<Mesh>(renderer);
 
   m_mesh->m_attrib.clear();
-  m_mesh->m_attrib.push_back(Attrib("in_pos", 3, AttribType::Float));
-  m_mesh->m_attrib.push_back(Attrib("in_nrm", 3, AttribType::Float));
-  m_mesh->m_attrib.push_back(Attrib("in_uvs", 2, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib(Attrib_pos, 3, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib(Attrib_nrm, 3, AttribType::Float));
+  m_mesh->m_attrib.push_back(Attrib(Attrib_tex0, 2, AttribType::Float));
 
   m_mesh->m_buf->set((float*)m_vert.data(), static_cast<int>(m_vert.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), hs::BufferUsage::StaticDraw);
 }

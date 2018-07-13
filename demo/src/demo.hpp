@@ -19,6 +19,7 @@ public:
 
 private:
   bool m_running;
+  bool m_wireframe;
 
   std::shared_ptr<hs::FPSCamera> m_camera;
 
@@ -30,4 +31,10 @@ private:
 
   // Globe
   std::shared_ptr<hs::AssemblyNode> m_globe;
+
+  struct {
+    float m_lastUpdate = 0.0f;
+    int m_frames = 0;
+    int m_fps = 0;
+  } m_framerate;
 };

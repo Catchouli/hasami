@@ -1,6 +1,7 @@
 project(hasami VERSION 0.1 LANGUAGES CXX)
 
 add_library(hasami
+  public/constants.hpp
   public/renderer.hpp
   private/renderer.cpp
   public/renderstate.hpp
@@ -30,7 +31,7 @@ add_library(hasami
   public/util.hpp
 )
 
-target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage simplefilewatcher)
+target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage simplefilewatcher imgui)
 
 target_include_directories(hasami PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>

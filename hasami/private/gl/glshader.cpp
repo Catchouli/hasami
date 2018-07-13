@@ -87,6 +87,11 @@ public:
     }
   }
 
+  static void resetProgram(CachedShader* shader) {
+    glDeleteProgram(shader->m_prog);
+    shader->m_prog = glCreateProgram();
+  }
+
   /// Whether to delete shader cores when they're no longer in use
   static const bool sm_deleteUnused = false;
 
@@ -131,6 +136,7 @@ void Shader::loadFromFile(const char* srcPath)
 
   if (m_cachedShader.value()->m_dirty) {
     m_cachedShader.value()->m_dirty = false;
+    ShaderCache::resetProgram(m_cachedShader.value());
     build(shaderSource);
   }
 

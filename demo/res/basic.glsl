@@ -31,6 +31,7 @@ void main()
 
   vec4 diffuse = vec4(albedo, 1.0) * col;
   fragColor = dot(var_nrm, vec3(0.0, 0.0, 1.0)) * vec4(0.7) * diffuse;
+  fragColor = vec4(1.0);
 }
 
 #endif

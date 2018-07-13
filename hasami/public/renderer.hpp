@@ -44,8 +44,9 @@ enum class AttribType { Float, Vec2, Vec3, Vec4, Unknown };
 enum class PrimitiveType { Triangles };
 enum class TextureFormat { RGBA8888 };
 enum class TextureUnit { Texture0, Texture1, Texture2, Texture3, Texture4, Texture5, Texture6, Texture7, Texture_Max };
-enum class BufferTarget { VertexBuffer };
+enum class BufferTarget { VertexBuffer, IndexBuffer };
 enum class BufferUsage { StaticDraw };
+enum class IndexFormat { U16 };
 
 /// App interface
 /// End users should implement this interface and pass it to a window
@@ -88,6 +89,7 @@ public:
   virtual StateManager* stateManager() = 0;
   virtual void clear(bool color, bool depth) = 0;
   virtual void drawArrays(PrimitiveType prim, int start, int count) = 0;
+  virtual void drawIndexed(PrimitiveType prim, int start, int count, hs::IndexFormat indexFormat) = 0;
   virtual bool checkError() = 0;
 };
 
@@ -138,7 +140,7 @@ public:
 template <typename T>
 void Buffer::set(const std::vector<T>& buf, int stride, BufferUsage usage)
 {
-  set((const void*)buf.data(), buf.size() * sizeof(T), stride, usage);
+  set((const void*)buf.data(), int(buf.size() * sizeof(T)), stride, usage);
 }
 
 /// A set function that takes a typed array and its size and updates the

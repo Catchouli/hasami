@@ -17,7 +17,7 @@ namespace hs {
 /// for it below. Additional sealed enums or types to the Value variant may be needed.
 struct RenderState
 {
-  enum class State { ClearColor, DepthTest, CullFace, PolygonMode };
+  enum class State { ClearColor, DepthTest, CullFace, PolygonMode, AlphaBlend };
   enum class PolygonMode { Point, Line, Fill };
   using Value = std::variant<glm::vec4, bool, PolygonMode>;
 
@@ -33,5 +33,7 @@ inline RenderState CullFace() { return RenderState{RenderState::State::CullFace}
 inline RenderState CullFace(bool b) { return RenderState{RenderState::State::CullFace, b}; };
 inline RenderState PolygonMode() { return RenderState{RenderState::State::PolygonMode}; };
 inline RenderState PolygonMode(RenderState::PolygonMode mode) { return RenderState{RenderState::State::PolygonMode, mode}; };
+inline RenderState AlphaBlend() { return RenderState{RenderState::State::AlphaBlend}; };
+inline RenderState AlphaBlend(bool b) { return RenderState{RenderState::State::AlphaBlend, b}; };
 
 }
