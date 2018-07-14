@@ -22,8 +22,8 @@ Demo::Demo(hs::Window* window)
   m_camera = std::make_shared<FPSCamera>();
   m_camera->m_camSpeed = 0.01f;
   m_camera->m_camSensitivity = 0.001f;
-  m_camera->m_pos.y = 1.0f;
-  m_camera->m_pos.z = 3.5f;
+  m_camera->m_pos = glm::vec3(-1.26f, 0.7f, 1.37f);
+  m_camera->m_rot = glm::vec2(359.0f, 787.0f);
   m_camera->update(0.0f, nullptr);
   m_camera->m_lockCamera = true; //^ lock unless we have the mouse button pressed
 
@@ -153,10 +153,10 @@ void Demo::render(hs::Window* window)
   m_scenegraph->render(*window->renderer(), *m_camera, params);
 
   // Update fps counter
+  m_framerate.m_frames++;
   if (time - m_framerate.m_lastUpdate > 1.0f) {
     m_framerate.m_lastUpdate = time;
     m_framerate.m_fps = m_framerate.m_frames;
     m_framerate.m_frames = 0;
   }
-  m_framerate.m_frames++;
 }
