@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer.hpp"
+#include "backends/gl/renderer.hpp"
 #include "glad/glad.h"
 #include <string>
 #include <map>
@@ -10,7 +10,7 @@
 #include <thread>
 #include <mutex>
 #include <deque>
-#include <optional.hpp>
+#include "util/optional.hpp"
 #include <FileWatcher/FileWatcher.h>
 
 namespace hs {

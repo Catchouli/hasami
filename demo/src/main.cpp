@@ -1,8 +1,8 @@
 #include "demo.hpp"
 
-#include "gl/sdlwindow.hpp"
-#include "gl/glrenderer.hpp"
-#include "gl/glshader.hpp"
+#include "backends/sdl/sdlwindow.hpp"
+#include "backends/glraw/glrenderer.hpp"
+#include "backends/glraw/glshader.hpp"
 
 
 int main(int argc, char** argv)

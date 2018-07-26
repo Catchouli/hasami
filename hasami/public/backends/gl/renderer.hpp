@@ -2,13 +2,13 @@
 
 #include "renderstate.hpp"
 
-#include <optional.hpp>
+#include "util/optional.hpp"
+#include "util/variant.hpp"
 #include <matrix.hpp>
 #include <vec2.hpp>
 #include <vec3.hpp>
 #include <vec4.hpp>
 #include <vector>
-#include <variant.hpp>
 
 #include <map>
 #include <stack>
