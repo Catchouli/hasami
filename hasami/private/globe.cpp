@@ -2,9 +2,14 @@
 
 namespace hs {
 
+GlobeNode::GlobeNode()
+{
+
+}
+
 void GlobeNode::draw(Renderer& renderer, const Context& ctx)
 {
-  generate(renderer, glm::vec3(0.0f, 0.0f, 3.0f));
+  generate(renderer, glm::vec3(ctx.m_viewInv[3]));
   ModelNode::draw(renderer, ctx);
 }
 
@@ -24,6 +29,19 @@ void GlobeNode::generate(Renderer& renderer, const glm::vec3& center)
   m_mesh->m_buf->set((float*)m_vert.data(), static_cast<int>(m_vert.size())*(sizeof(Vertex)/sizeof(float)), sizeof(Vertex), hs::BufferUsage::StaticDraw);
 }
 
+glm::vec2 dirToLatLong(const glm::vec3& dir) {
+  // https://stackoverflow.com/a/5674243
+  return glm::vec2( asin(dir.y)
+                  , atan2(dir.x, dir.z)
+                  );
+}
+
+glm::vec2 sphereUvs(const glm::vec3& pos) {
+  glm::vec3 d = glm::normalize(pos);
+  // this is an equirectangular projection i think? https://en.wikipedia.org/wiki/UV_mapping
+  return glm::vec2(0.5f + atan2(d.z, d.x) / (2 * glm::pi<float>(), 0.5f - asin(d.y) / glm::pi<float>()));
+}
+
 void GlobeNode::subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& center, float size)
 {
   float ratio = 1.0f;
@@ -39,9 +57,9 @@ void GlobeNode::subdivide(const glm::vec3& a, const glm::vec3& b, const glm::vec
 
   if (dist > ratio * size || size < minsize) {
     glm::vec3 nrm = glm::normalize(glm::cross(b - a, c - a));
-    m_vert.push_back({a, nrm, glm::vec2(0.0f)});
-    m_vert.push_back({b, nrm, glm::vec2(0.0f)});
-    m_vert.push_back({c, nrm, glm::vec2(0.0f)});
+    m_vert.push_back({a, glm::normalize(a), dirToLatLong(glm::normalize(a))});
+    m_vert.push_back({b, glm::normalize(b), dirToLatLong(glm::normalize(b))});
+    m_vert.push_back({c, glm::normalize(c), dirToLatLong(glm::normalize(c))});
     return;
   }
 

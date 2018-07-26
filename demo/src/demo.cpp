@@ -81,9 +81,13 @@ Demo::Demo(hs::Window* window)
   m_globe = std::make_shared<AssemblyNode>();
   m_globe->setParent(m_scenegraph);
 
+  auto earthTex = std::shared_ptr<hs::Texture>(window->renderer()->createTexture());
+  earthTex->load("res/planet/earth.jpg");
+
   auto globeModel = std::make_shared<GlobeNode>();
   globeModel->setParent(m_globe);
   globeModel->m_mat = std::make_shared<hs::StandardMaterial>(window->renderer(), "res/basic.glsl");
+  globeModel->m_mat->albedo.set(earthTex);
 
   // Disable globe and miku by default
   skybox->m_enabled = false;
@@ -140,6 +144,11 @@ void Demo::render(hs::Window* window)
     m_miku->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
     m_miku->m_scale = glm::vec3(0.05f, 0.05f, 0.05f) * (1.0f+0.2f*sin(time));
     m_miku->dirtyLocal();
+  }
+
+  // Update globe
+  if (m_globe->m_enabled) {
+    m_globe->m_rot = glm::rotate(glm::quat(), time * 0.1f, glm::vec3(0.0f, 1.0f, 0.0f));
   }
 
   // Update camera

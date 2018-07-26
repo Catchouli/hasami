@@ -28,6 +28,8 @@ add_library(hasami
   private/gl/glrenderer.cpp
   public/gl/gltexture.hpp
   private/gl/gltexture.cpp
+  public/environment/clouds.hpp
+  private/environment/clouds.cpp
   public/util.hpp
 )
 

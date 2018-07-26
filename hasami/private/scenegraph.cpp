@@ -48,6 +48,7 @@ void SceneNode::render(Renderer& renderer, const Camera& camera, const RenderPar
   ctx.m_time = params.m_time;
   ctx.m_projection = camera.projMat();
   ctx.m_view = camera.viewMat();
+  ctx.m_viewInv = glm::inverse(ctx.m_view);
   ctx.m_object = glm::mat4();
 
   // Draw scenegraph
