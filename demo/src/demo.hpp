@@ -1,10 +1,10 @@
 #pragma once
 
-#include "renderer.hpp"
-#include "mesh.hpp"
-#include "scenegraph.hpp"
-#include "camera.hpp"
-#include "standardmaterial.hpp"
+#include "backends/gl/renderer.hpp"
+#include "backends/gl/mesh.hpp"
+#include "backends/gl/standardmaterial.hpp"
+#include "scene/scenegraph.hpp"
+#include "scene/camera.hpp"
 
 #include <memory>
 

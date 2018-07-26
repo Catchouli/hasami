@@ -1,8 +1,8 @@
 #pragma once
 
-#include "scenegraph.hpp"
-#include "standardmaterial.hpp"
-#include "mesh.hpp"
+#include "scene/scenegraph.hpp"
+#include "backends/gl/standardmaterial.hpp"
+#include "backends/gl/mesh.hpp"
 
 namespace hs {
 

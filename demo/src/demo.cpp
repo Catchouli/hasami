@@ -1,6 +1,6 @@
 #include "demo.hpp"
 #include "globe.hpp"
-#include "scenegraph.hpp"
+#include "scene/scenegraph.hpp"
 
 #include "SDL.h"
 

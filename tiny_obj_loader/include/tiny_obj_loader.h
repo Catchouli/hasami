@@ -176,7 +176,7 @@ typedef struct {
   real_t pad0;
   real_t pad1;
   std::string roughness_texname;  // map_Pr
-  std::string metallic_texname;   // map_Pm
+  std::string metallic_texname;   // map_Pmleft: 0
   std::string sheen_texname;      // map_Ps
   std::string emissive_texname;   // map_Ke
   std::string normal_texname;     // norm. For normal mapping.

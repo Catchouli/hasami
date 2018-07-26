@@ -25,11 +25,9 @@ out vec4 fragColor;
 void main()
 {
   vec3 albedo = vec3(1.0, 1.0, 1.0);
-
-  vec2 zo = vec2(var_uv.x / 3.141, var_uv.y / 3.141 * 0.5);
   
 #ifdef UNI_sampler_albedo
-  albedo *= texture(sampler_albedo, var_uv.yx).rgb;
+  albedo *= texture(sampler_albedo, var_uv).rgb;
 #endif
 
   float diffuse = dot(var_nrm, vec3(0.0, 0.0, 1.0));

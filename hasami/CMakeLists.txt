@@ -1,36 +1,40 @@
 project(hasami VERSION 0.1 LANGUAGES CXX)
 
 add_library(hasami
-  public/constants.hpp
-  public/renderer.hpp
-  private/renderer.cpp
-  public/renderstate.hpp
-  public/scenegraph.hpp
-  private/scenegraph.cpp
-  public/globe.hpp
-  private/globe.cpp
-  public/camera.hpp
-  private/camera.cpp
-  public/mesh.hpp
-  private/mesh.cpp
-  public/material.hpp
-  private/material.cpp
-  public/standardmaterial.hpp
-  public/filewatchservice.hpp
-  private/filewatchservice.cpp
-  public/gl/sdlwindow.hpp
-  private/gl/sdlwindow.cpp
-  public/gl/glbuffer.hpp
-  private/gl/glbuffer.cpp
-  public/gl/glshader.hpp
-  private/gl/glshader.cpp
-  public/gl/glrenderer.hpp
-  private/gl/glrenderer.cpp
-  public/gl/gltexture.hpp
-  private/gl/gltexture.cpp
-  public/environment/clouds.hpp
-  private/environment/clouds.cpp
-  public/util.hpp
+  # backends
+  #  sdl
+  public/backends/sdl/sdlwindow.hpp
+  private/backends/sdl/sdlwindow.cpp
+  #  glraw
+  public/backends/glraw/glbuffer.hpp
+  private/backends/glraw/glbuffer.cpp
+  public/backends/glraw/glrenderer.hpp
+  private/backends/glraw/glrenderer.cpp
+  public/backends/glraw/glshader.hpp
+  private/backends/glraw/glshader.cpp
+  public/backends/glraw/gltexture.hpp
+  private/backends/glraw/gltexture.cpp
+  #  gl renderer
+  public/backends/gl/constants.hpp
+  public/backends/gl/material.hpp
+  private/backends/gl/material.cpp
+  public/backends/gl/mesh.hpp
+  private/backends/gl/mesh.cpp
+  public/backends/gl/renderer.hpp
+  private/backends/gl/renderer.cpp
+  public/backends/gl/renderstate.hpp
+  public/backends/gl/standardmaterial.hpp
+  #  scene
+  public/backends/scene/camera.hpp
+  private/backends/scene/camera.cpp
+  public/backends/scene/scenegraph.hpp
+  private/backends/scene/scenegraph.cpp
+  #  util
+  public/backends/util/filewatchservice.hpp
+  private/backends/util/filewatchservice.cpp
+  public/backends/util/optional.hpp
+  public/backends/util/variant.hpp
+  public/backends/util/util.hpp
 )
 
 target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage simplefilewatcher imgui)
