@@ -10,6 +10,8 @@ class GlobeNode
   : public ModelNode
 {
 public:
+  GlobeNode();
+
   virtual void draw(Renderer& renderer, const Context& ctx) override;
 
 private:

@@ -28,6 +28,7 @@ struct Context
   float m_time = 0.0f;
   glm::mat4 m_projection;
   glm::mat4 m_view;
+  glm::mat4 m_viewInv;
   glm::mat4 m_object;
 };
 
