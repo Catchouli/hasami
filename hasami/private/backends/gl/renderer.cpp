@@ -1,8 +1,7 @@
-#include "renderer.hpp"
-
 #define FREEIMAGE_LIB
 #include "FreeImage.h"
 #include "Utilities.h"
+#include "backends/gl/renderer.hpp"
 
 namespace hs {
 

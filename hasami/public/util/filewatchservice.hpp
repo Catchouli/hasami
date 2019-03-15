@@ -6,8 +6,8 @@
 #include <string>
 #include <thread>
 #include <mutex>
-#include <optional.hpp>
 #include <FileWatcher/FileWatcher.h>
+#include <optional>
 
 namespace hs
 {

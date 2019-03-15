@@ -1,4 +1,5 @@
-#include "material.hpp"
+#include "backends/gl/material.hpp"
+#include <memory>
 
 namespace hs {
 

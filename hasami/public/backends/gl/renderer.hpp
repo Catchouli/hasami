@@ -2,8 +2,6 @@
 
 #include "renderstate.hpp"
 
-#include "util/optional.hpp"
-#include "util/variant.hpp"
 #include <matrix.hpp>
 #include <vec2.hpp>
 #include <vec3.hpp>

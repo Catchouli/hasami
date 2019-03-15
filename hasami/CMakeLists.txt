@@ -25,16 +25,14 @@ add_library(hasami
   public/backends/gl/renderstate.hpp
   public/backends/gl/standardmaterial.hpp
   #  scene
-  public/backends/scene/camera.hpp
-  private/backends/scene/camera.cpp
-  public/backends/scene/scenegraph.hpp
-  private/backends/scene/scenegraph.cpp
+  public/scene/camera.hpp
+  private/scene/camera.cpp
+  public/scene/scenegraph.hpp
+  private/scene/scenegraph.cpp
   #  util
-  public/backends/util/filewatchservice.hpp
-  private/backends/util/filewatchservice.cpp
-  public/backends/util/optional.hpp
-  public/backends/util/variant.hpp
-  public/backends/util/util.hpp
+  public/util/filewatchservice.hpp
+  private/util/filewatchservice.cpp
+  public/util/util.hpp
 )
 
 target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage simplefilewatcher imgui)

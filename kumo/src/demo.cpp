@@ -89,11 +89,11 @@ Demo::Demo(hs::Window* window)
   globeModel->m_mat = std::make_shared<hs::StandardMaterial>(window->renderer(), "res/basic.glsl");
   globeModel->m_mat->albedo.set(earthTex);
 
-  // Disable globe and miku by default
+  // Disable some stuff by default
   skybox->m_enabled = false;
   m_miku->m_enabled = false;
   cornellBox->m_enabled = false;
-  //m_globe->m_enabled = false;
+  m_globe->m_enabled = false;
 }
 
 void Demo::input(const SDL_Event* evt)

@@ -4,16 +4,17 @@
 #include <map>
 #include <memory>
 
-#include "renderer.hpp"
 #include "camera.hpp"
 #include "matrix.hpp"
-#include "renderstate.hpp"
 #include "vec3.hpp"
 #include "gtc/quaternion.hpp"
+#include "backends/gl/renderstate.hpp"
 
 namespace hs {
+  class Renderer;
+  struct RenderState;
 
-class Mesh;
+  class Mesh;
 class StandardMaterial;
 
 struct RenderParams

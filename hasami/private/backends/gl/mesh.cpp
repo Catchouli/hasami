@@ -1,10 +1,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "mesh.hpp"
-
 #include "glm.hpp"
 #include "tiny_obj_loader.h"
-#include "util.hpp"
+#include "util/util.hpp"
+#include "backends/gl/renderer.hpp"
+#include "backends/gl/mesh.hpp"
+#include <optional>
 
 namespace hs {
 

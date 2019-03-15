@@ -1,6 +1,6 @@
-#include "gl/gltexture.hpp"
-
 #include "glad/glad.h"
+#include "backends/glraw/gltexture.hpp"
+#include "backends/gl/renderer.hpp"
 
 namespace hs {
 namespace gl {

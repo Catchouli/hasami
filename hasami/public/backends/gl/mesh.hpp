@@ -3,10 +3,10 @@
 #include <vector>
 #include <memory>
 #include <matrix.hpp>
-#include "util/optional.hpp"
 #include "backends/gl/renderer.hpp"
 #include "backends/gl/standardmaterial.hpp"
 #include "scene/scenegraph.hpp"
+#include <optional>
 
 namespace hs {
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "util/variant.hpp"
 #include "vec4.hpp"
+#include <variant>
 
 namespace hs {
 

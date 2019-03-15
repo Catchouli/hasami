@@ -1,6 +1,7 @@
 #pragma once
 
 #include "backends/gl/renderer.hpp"
+#include <memory>
 
 namespace hs {
 namespace gl {

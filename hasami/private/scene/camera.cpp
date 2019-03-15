@@ -1,7 +1,6 @@
-#include "camera.hpp"
-
 #include <gtc/matrix_transform.hpp>
 #include <SDL.h>
+#include "scene/camera.hpp"
 
 namespace hs {
 

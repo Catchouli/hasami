@@ -1,4 +1,5 @@
-#include "filewatchservice.hpp"
+#include "util/filewatchservice.hpp"
+#include <cassert>
 
 namespace hs
 {
@@ -57,7 +58,13 @@ void FileWatchService::fileWatchThread()
       for (auto& task : m_tasks) {
         switch (std::get<0>(task)) {
           case Task::AddWatch: {
-            m_watches[std::get<1>(task)] = m_fileWatcher.addWatch(std::get<2>(task).value(), std::get<1>(task));
+            try {
+              m_watches[std::get<1>(task)] = m_fileWatcher.addWatch(std::get<2>(task).value(), std::get<1>(task));
+            }
+            catch (FW::Exception& ex)
+            {
+              fprintf(stderr, "Failed to add watch for directory %s: %s\n", std::get<2>(task).value().c_str(), ex.what());
+            }
             break;
           }
           case Task::RemoveWatch: {
