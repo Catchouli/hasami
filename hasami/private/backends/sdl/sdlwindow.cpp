@@ -1,13 +1,16 @@
-#include "gl/sdlwindow.hpp"
 #include "SDL.h"
 #include <stdio.h>
-#include "renderer.hpp"
-#include "mesh.hpp"
 #include "gtc/matrix_transform.hpp"
+#include "backends/sdl/sdlwindow.hpp"
+#include "../../../../kumo/src/demo.hpp"
 
 #ifdef USE_IMGUI
 #include "imgui.hpp"
 #endif
+
+namespace hs {
+  class StandardMaterial;
+}
 
 namespace hs {
 namespace sdl {

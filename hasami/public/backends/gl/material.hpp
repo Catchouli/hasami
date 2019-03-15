@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer.hpp"
+#include <memory>
 
 namespace hs {
 

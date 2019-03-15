@@ -1,11 +1,9 @@
-#include "gl/glrenderer.hpp"
-#include "gl/glshader.hpp"
-#include "gl/glbuffer.hpp"
-#include "gl/gltexture.hpp"
-
 #include "glad/glad.h"
-
-#include "variant.hpp"
+#include "backends/gl/renderer.hpp"
+#include "backends/glraw/glrenderer.hpp"
+#include "backends/glraw/glshader.hpp"
+#include "backends/glraw/glbuffer.hpp"
+#include "backends/glraw/gltexture.hpp"
 
 namespace hs {
 namespace gl {
@@ -97,11 +95,11 @@ GLenum glPolyMode(RenderState::PolygonMode mode) {
 void StateManager::applyState(const RenderState& renderState)
 {
   switch (renderState.m_state) {
-    case RenderState::State::DepthTest: { (mpark::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_DEPTH_TEST); } break;
-    case RenderState::State::CullFace: { (mpark::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_CULL_FACE); } break;
-    case RenderState::State::ClearColor: { const auto& v = mpark::get<glm::vec4>(renderState.m_val); glClearColor(v.x, v.y, v.z, v.w); } break;
-    case RenderState::State::PolygonMode: { glPolygonMode(GL_FRONT_AND_BACK, glPolyMode(mpark::get<RenderState::PolygonMode>(renderState.m_val))); } break;
-    case RenderState::State::AlphaBlend: { (mpark::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); } break;
+    case RenderState::State::DepthTest: { (std::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_DEPTH_TEST); } break;
+    case RenderState::State::CullFace: { (std::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_CULL_FACE); } break;
+    case RenderState::State::ClearColor: { const auto& v = std::get<glm::vec4>(renderState.m_val); glClearColor(v.x, v.y, v.z, v.w); } break;
+    case RenderState::State::PolygonMode: { glPolygonMode(GL_FRONT_AND_BACK, glPolyMode(std::get<RenderState::PolygonMode>(renderState.m_val))); } break;
+    case RenderState::State::AlphaBlend: { (std::get<bool>(renderState.m_val) ? glEnable : glDisable)(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); } break;
     default: assert(false); break;
   }
 }

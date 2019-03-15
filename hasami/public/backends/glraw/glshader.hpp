@@ -10,8 +10,8 @@
 #include <thread>
 #include <mutex>
 #include <deque>
-#include "util/optional.hpp"
 #include <FileWatcher/FileWatcher.h>
+#include <optional>
 
 namespace hs {
 namespace gl {
