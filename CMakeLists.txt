@@ -20,6 +20,7 @@ add_subdirectory(libs/FreeImage)
 add_subdirectory(libs/simplefilewatcher)
 add_subdirectory(libs/imgui)
 add_subdirectory(libs/stb)
+add_subdirectory(libs/catch)
 
 # Enable C++17 in VS2017
 if (MSVC_VERSION GREATER_EQUAL "1900")
@@ -31,4 +32,5 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
 endif()
 
 add_subdirectory(hasami)
+add_subdirectory(hasami_test)
 add_subdirectory(kumo)
