@@ -1,4 +1,4 @@
-#include "glad/glad.h"
+﻿#include "glad/glad.h"
 #include "backends/gl/renderer.hpp"
 #include "backends/glraw/glrenderer.hpp"
 #include "backends/glraw/glshader.hpp"
@@ -29,6 +29,14 @@ int glIndexFormatSize(IndexFormat format) {
   }
 }
 
+void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+  GLsizei length, const GLchar* message, const void* userParam)
+{
+  if (severity >= GL_DEBUG_SEVERITY_HIGH) {
+    fprintf(stderr, "GL error: %s\n", message);
+  }
+}
+
 
 GLRenderer::GLRenderer()
 {
@@ -36,6 +44,14 @@ GLRenderer::GLRenderer()
     fprintf(stderr, "Glad (opengl) failed to initialise\n");
     throw;
   }
+
+#ifdef _DEBUG
+  glEnable(GL_DEBUG_OUTPUT);
+  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+  if (glDebugMessageCallback) {
+    glDebugMessageCallback(GLDebugCallback, nullptr);
+  }
+#endif
 
   m_stateManager = std::make_shared<gl::StateManager>();
 }
@@ -69,18 +85,6 @@ void GLRenderer::drawIndexed(PrimitiveType prim, int start, int count, hs::Index
 void GLRenderer::clear(bool color, bool depth)
 {
   glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
-}
-
-bool GLRenderer::checkError()
-{
-  #ifdef _DEBUG
-  GLenum err = glGetError();
-  if (err != GL_NO_ERROR) {
-    fprintf(stderr, "GL error: %d\n", err);
-    return true;
-  }
-  #endif
-  return false;
 }
 
 GLenum glPolyMode(RenderState::PolygonMode mode) {

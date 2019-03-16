@@ -9,11 +9,6 @@ Texture::Texture()
   : m_target(GL_TEXTURE_2D)
 {
   glGenTextures(1, &m_id);
-  glBindTexture(GL_TEXTURE_2D, m_id);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 Texture::~Texture()
@@ -21,14 +16,31 @@ Texture::~Texture()
   glDeleteTextures(1, &m_id);
 }
 
-void Texture::set(TextureFormat f, int width, int height, void* ptr)
+void Texture::set(TextureFormat f, int width, int height, int depth, void* ptr)
 {
-  m_target = GL_TEXTURE_2D;
+  m_target = depth > 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D;
   bind(TextureUnit::Texture0);
 
+  glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  GLint internalFormat = GL_RGBA;
+  GLint format = GL_RGBA;
+  GLint type = GL_UNSIGNED_BYTE;
+
   switch (f) {
-    case TextureFormat::RGBA8888: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, ptr); return;
+    case TextureFormat::RGBA8888: internalFormat = GL_UNSIGNED_BYTE; format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
+    case TextureFormat::R32F: internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
     default: assert(false); return;
+  }
+
+  if (depth > 1) {
+    glTexImage3D(m_target, 0, internalFormat, width, height, depth, 0, format, type, ptr);
+  }
+  else {
+    glTexImage2D(m_target, 0, internalFormat, width, height, 0, format, type, ptr);
   }
 }
 

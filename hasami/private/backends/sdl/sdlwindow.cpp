@@ -112,8 +112,6 @@ void SDLWindowBase::run()
       m_app->render(this);
       imguiRender();
       SDL_GL_SwapWindow(m_win);
-      if (auto* renderer = this->renderer())
-        renderer->checkError();
     }
   }
 }
@@ -130,7 +128,7 @@ void SDLWindowBase::imguiInit()
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
     m_fontAtlas = std::shared_ptr<hs::Texture>(renderer->createTexture());
-    m_fontAtlas->set(hs::TextureFormat::RGBA8888, width, height, pixels);
+    m_fontAtlas->set(hs::TextureFormat::RGBA8888, width, height, 1, pixels);
   }
 #endif
 }

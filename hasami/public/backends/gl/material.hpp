@@ -47,22 +47,50 @@ private:
   T m_val;
 };
 
+template <hs::UniformType uniformType>
+class ShaderVarSampler
+  : public ShaderVarT<TextureUnit>
+{
+public:
+  ShaderVarSampler(const char* name, TextureUnit val) : ShaderVarT<TextureUnit>(name, val) {}
+  hs::UniformType valTy() const override { return uniformType; }
+};
+
 class Sampler
 {
 public:
-  Sampler(const char* name);
-
-  void create(Material* mat, TextureUnit unit);
+  hs::Texture* tex() { return m_tex.get(); }
 
   void set(std::shared_ptr<hs::Texture> tex) { m_tex = tex; }
 
-  hs::Texture* tex() { return m_tex.get(); }
-  ShaderVarT<TextureUnit>& var() { return m_var; }
+  virtual void create(Material* mat, TextureUnit unit) = 0;
+  virtual ShaderVarT<TextureUnit>& var() = 0;
 
 private:
   std::shared_ptr<hs::Texture> m_tex;
-  ShaderVarT<TextureUnit> m_var;
 };
+
+template <hs::UniformType samplerType>
+class SamplerT
+  : public Sampler
+{
+public:
+  SamplerT(const char* name)
+    : m_var(name, TextureUnit::Texture0)
+  {
+  }
+
+  void create(Material* mat, TextureUnit unit)
+  {
+    m_var.create(mat);
+    m_var.set(unit);
+  }
+
+  ShaderVarT<TextureUnit>& var() override { return m_var; }
+
+  ShaderVarSampler<samplerType> m_var;
+};
+
 
 class Material
 {

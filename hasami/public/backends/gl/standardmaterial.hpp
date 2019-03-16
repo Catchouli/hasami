@@ -15,7 +15,7 @@ public:
   ShaderVarT<glm::mat4> view = {"uni_view", glm::mat4()};
   ShaderVarT<glm::mat4> projection = {"uni_projection", glm::mat4()};
   ShaderVarT<glm::mat4> mvp = {"uni_mvp", glm::mat4()};
-  Sampler albedo = {"sampler_albedo"};
+  SamplerT<hs::UniformType::Sampler2D> albedo = {"sampler_albedo"};
 
   StandardMaterial(hs::Renderer* renderer, const char* shaderPath)
     : Material(renderer, shaderPath)

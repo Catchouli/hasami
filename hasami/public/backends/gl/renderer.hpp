@@ -37,10 +37,10 @@ class Buffer;
 class Texture;
 class StateManager;
 
-enum class UniformType { Float, Mat4, Sampler2D, Unknown };
+enum class UniformType { Float, Mat4, Sampler2D, Sampler3D, Unknown };
 enum class AttribType { Float, Vec2, Vec3, Vec4, Unknown };
 enum class PrimitiveType { Triangles };
-enum class TextureFormat { RGBA8888 };
+enum class TextureFormat { R32F, RGBA8888 };
 enum class TextureUnit { Texture0, Texture1, Texture2, Texture3, Texture4, Texture5, Texture6, Texture7, Texture_Max };
 enum class BufferTarget { VertexBuffer, IndexBuffer };
 enum class BufferUsage { StaticDraw };
@@ -88,7 +88,6 @@ public:
   virtual void clear(bool color, bool depth) = 0;
   virtual void drawArrays(PrimitiveType prim, int start, int count) = 0;
   virtual void drawIndexed(PrimitiveType prim, int start, int count, hs::IndexFormat indexFormat) = 0;
-  virtual bool checkError() = 0;
 };
 
 /// Shader interface
@@ -178,7 +177,7 @@ public:
 
   // Interface
 
-  virtual void set(TextureFormat f, int width, int height, void* ptr) = 0;
+  virtual void set(TextureFormat f, int width, int height, int depth, void* ptr) = 0;
   virtual void bind(TextureUnit unit) = 0;
 };
 

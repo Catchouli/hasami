@@ -8,4 +8,4 @@ add_executable(kumo
   src/globe.hpp
 )
 
-target_link_libraries(kumo hasami glad glm SDL2 tiny_obj_loader FreeImage imgui)
+target_link_libraries(kumo hasami glad glm SDL2 tiny_obj_loader FreeImage imgui stb)

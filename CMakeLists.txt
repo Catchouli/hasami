@@ -19,6 +19,7 @@ add_subdirectory(libs/tiny_obj_loader)
 add_subdirectory(libs/FreeImage)
 add_subdirectory(libs/simplefilewatcher)
 add_subdirectory(libs/imgui)
+add_subdirectory(libs/stb)
 
 # Enable C++17 in VS2017
 if (MSVC_VERSION GREATER_EQUAL "1900")
