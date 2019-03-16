@@ -17,7 +17,6 @@ public:
   void drawArrays(PrimitiveType prim, int start, int count) override;
   void drawIndexed(PrimitiveType prim, int start, int count, hs::IndexFormat indexFormat) override;
   void clear(bool color, bool depth) override;
-  bool checkError() override;
 
 private:
   std::shared_ptr<hs::StateManager> m_stateManager;

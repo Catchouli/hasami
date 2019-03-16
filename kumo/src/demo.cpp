@@ -7,6 +7,7 @@
 #include <map>
 
 #include <gtc/matrix_transform.hpp>
+#include "clouds.hpp"
 
 #ifdef USE_IMGUI
 #include "imgui.hpp"
@@ -20,10 +21,10 @@ Demo::Demo(hs::Window* window)
 
   // Create camera
   m_camera = std::make_shared<FPSCamera>();
-  m_camera->m_camSpeed = 0.01f;
-  m_camera->m_camSensitivity = 0.001f;
-  m_camera->m_pos = glm::vec3(-1.26f, 0.7f, 1.37f);
-  m_camera->m_rot = glm::vec2(359.0f, 787.0f);
+  m_camera->m_camSpeed = 0.025f;
+  m_camera->m_camSensitivity = 0.005f;
+  //m_camera->m_pos = glm::vec3(-1.26f, 0.7f, 1.37f);
+  //m_camera->m_rot = glm::vec2(359.0f, 787.0f);
   m_camera->update(0.0f, nullptr);
   m_camera->m_lockCamera = true; //^ lock unless we have the mouse button pressed
 
@@ -53,9 +54,6 @@ Demo::Demo(hs::Window* window)
   skyboxModel->m_mesh->loadObj("res/sphere.obj", Mesh::Normals::Smooth);
   skyboxModel->m_mat = skyboxMat;
 
-  auto mikuTex = std::shared_ptr<hs::Texture>(window->renderer()->createTexture());
-  mikuTex->load("res/miku.png");
-
   // Create cornell box
   auto cornellBox = std::make_shared<AssemblyNode>();
   cornellBox->setParent(m_scenegraph);
@@ -69,6 +67,9 @@ Demo::Demo(hs::Window* window)
   // Create miku model
   m_miku = std::make_shared<AssemblyNode>();
   m_miku->setParent(m_scenegraph);
+
+  auto mikuTex = std::shared_ptr<hs::Texture>(window->renderer()->createTexture());
+  mikuTex->load("res/miku.png");
 
   m_mikuModel = std::make_shared<ModelNode>();
   m_mikuModel->setParent(m_miku);
@@ -89,8 +90,12 @@ Demo::Demo(hs::Window* window)
   globeModel->m_mat = std::make_shared<hs::StandardMaterial>(window->renderer(), "res/basic.glsl");
   globeModel->m_mat->albedo.set(earthTex);
 
+  // Create clouds
+  auto clouds = std::make_shared<CloudsNode>(*window->renderer());
+  clouds->setParent(m_scenegraph);
+
   // Disable some stuff by default
-  skybox->m_enabled = false;
+  skybox->m_enabled = true;
   m_miku->m_enabled = false;
   cornellBox->m_enabled = false;
   m_globe->m_enabled = false;

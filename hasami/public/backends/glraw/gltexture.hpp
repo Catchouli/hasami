@@ -11,7 +11,7 @@ public:
   Texture();
   ~Texture();
 
-  virtual void set(TextureFormat f, int width, int height, void* ptr) override;
+  virtual void set(TextureFormat f, int width, int height, int depth, void* ptr) override;
   virtual void bind(TextureUnit unit) override;
 
 private:

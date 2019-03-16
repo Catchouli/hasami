@@ -269,6 +269,7 @@ std::string Shader::genHeader()
       case UniformType::Float: ss << "float "; break;
       case UniformType::Mat4: ss << "mat4 "; break;
       case UniformType::Sampler2D: ss << "sampler2D "; break;
+      case UniformType::Sampler3D: ss << "sampler3D "; break;
       default: ss << "unknown "; break;
     }
     ss << uniform.first.c_str() << ";" << std::endl;
@@ -331,7 +332,8 @@ void Shader::setUniform(const char* name, UniformType type, const void* buf)
     switch (type) {
       case UniformType::Float: glUniform1fv(it->second.location, 1, static_cast<const float*>(buf)); break;
       case UniformType::Mat4: glUniformMatrix4fv(it->second.location, 1, GL_FALSE, static_cast<const float*>(buf)); break;
-      case UniformType::Sampler2D: {
+      case UniformType::Sampler2D:
+      case UniformType::Sampler3D: {
         TextureUnit ts = *static_cast<const TextureUnit*>(buf);
         glUniform1i(it->second.location, static_cast<int>(ts));
         break;

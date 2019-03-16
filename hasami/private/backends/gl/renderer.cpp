@@ -70,7 +70,7 @@ bool Texture::load(const char* path)
   int height = FreeImage_GetHeight(bmp32);
 
   // Set texture
-  set(TextureFormat::RGBA8888, width, height, bits);
+  set(TextureFormat::RGBA8888, width, height, 1, bits);
 
   // Unload bitmap
   FreeImage_Unload(bmp32);

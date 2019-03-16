@@ -26,19 +26,6 @@ void ShaderVar::update()
   //}
 }
 
-/* Sampler */
-
-Sampler::Sampler(const char* name)
-  : m_var(name, TextureUnit::Texture0)
-{
-}
-
-void Sampler::create(Material* mat, TextureUnit unit)
-{
-  m_var.create(mat);
-  m_var.set(unit);
-}
-
 /* Material */
 
 Material::Material(hs::Renderer* renderer, const char* shaderPath)
