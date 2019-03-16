@@ -31,7 +31,7 @@ void Texture::set(TextureFormat f, int width, int height, int depth, void* ptr)
   GLint type = GL_UNSIGNED_BYTE;
 
   switch (f) {
-    case TextureFormat::RGBA8888: internalFormat = GL_UNSIGNED_BYTE; format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
+    case TextureFormat::RGBA8888: internalFormat = GL_RGBA; format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
     case TextureFormat::R32F: internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
     default: assert(false); return;
   }
