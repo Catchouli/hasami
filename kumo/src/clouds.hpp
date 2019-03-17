@@ -1,8 +1,6 @@
 #pragma once
 
 #include "scene/scenegraph.hpp"
-#include "renderer/standardmaterial.hpp"
-#include "renderer/mesh.hpp"
 
 class CloudsNode
   : public hs::ModelNode

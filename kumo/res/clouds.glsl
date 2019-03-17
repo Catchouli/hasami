@@ -23,7 +23,8 @@ vec3 sunDir = normalize(vec3(0.0, 0.4, 0.9));
 vec4 sphere = vec4(0.0, 0.0, 0.0, 1.0);
 
 float getDensity(vec3 pos) {
-  return max(0.0, textureLod(sampler_noiseTex, pos / 8.0, 0.0).x);
+  float posScale = 1.0 / 2.0;
+  return max(0.0, textureLod(sampler_noiseTex, pos * posScale, 0.0).x);
 }
 
 float transmittance(float opticalDepth) {
