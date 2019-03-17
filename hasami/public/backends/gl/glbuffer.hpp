@@ -2,7 +2,7 @@
 
 #include "glad/glad.h"
 #include <vector>
-#include "backends/gl/renderer.hpp"
+#include "renderer/renderer.hpp"
 
 namespace hs {
   enum class BufferTarget;

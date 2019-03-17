@@ -1,9 +1,9 @@
 #include "gtx/quaternion.hpp"
 #include "gtc/matrix_transform.hpp"
 #include "scene/scenegraph.hpp"
-#include "backends/gl/renderstate.hpp"
-#include "backends/gl/renderer.hpp"
-#include "backends/gl/mesh.hpp"
+#include "renderer/renderstate.hpp"
+#include "renderer/renderer.hpp"
+#include "renderer/mesh.hpp"
 
 namespace hs {
 

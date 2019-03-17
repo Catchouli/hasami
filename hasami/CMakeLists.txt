@@ -1,29 +1,28 @@
 project(hasami VERSION 0.1 LANGUAGES CXX)
 
 add_library(hasami
-  # backends
-  #  sdl
+  #  sdl backend
   public/backends/sdl/sdlwindow.hpp
   private/backends/sdl/sdlwindow.cpp
-  #  glraw
-  public/backends/glraw/glbuffer.hpp
-  private/backends/glraw/glbuffer.cpp
-  public/backends/glraw/glrenderer.hpp
-  private/backends/glraw/glrenderer.cpp
-  public/backends/glraw/glshader.hpp
-  private/backends/glraw/glshader.cpp
-  public/backends/glraw/gltexture.hpp
-  private/backends/glraw/gltexture.cpp
-  #  gl renderer
-  public/backends/gl/constants.hpp
-  public/backends/gl/material.hpp
-  private/backends/gl/material.cpp
-  public/backends/gl/mesh.hpp
-  private/backends/gl/mesh.cpp
-  public/backends/gl/renderer.hpp
-  private/backends/gl/renderer.cpp
-  public/backends/gl/renderstate.hpp
-  public/backends/gl/standardmaterial.hpp
+  #  gl backend
+  public/backends/gl/glbuffer.hpp
+  private/backends/gl/glbuffer.cpp
+  public/backends/gl/glrenderer.hpp
+  private/backends/gl/glrenderer.cpp
+  public/backends/gl/glshader.hpp
+  private/backends/gl/glshader.cpp
+  public/backends/gl/gltexture.hpp
+  private/backends/gl/gltexture.cpp
+  #  renderer
+  public/renderer/constants.hpp
+  public/renderer/material.hpp
+  private/renderer/material.cpp
+  public/renderer/mesh.hpp
+  private/renderer/mesh.cpp
+  public/renderer/renderer.hpp
+  private/renderer/renderer.cpp
+  public/renderer/renderstate.hpp
+  public/renderer/standardmaterial.hpp
   #  scene
   public/scene/camera.hpp
   private/scene/camera.cpp

@@ -1,9 +1,9 @@
 ﻿#include "glad/glad.h"
-#include "backends/gl/renderer.hpp"
-#include "backends/glraw/glrenderer.hpp"
-#include "backends/glraw/glshader.hpp"
-#include "backends/glraw/glbuffer.hpp"
-#include "backends/glraw/gltexture.hpp"
+#include "renderer/renderer.hpp"
+#include "backends/gl/glrenderer.hpp"
+#include "backends/gl/glshader.hpp"
+#include "backends/gl/glbuffer.hpp"
+#include "backends/gl/gltexture.hpp"
 
 namespace hs {
 namespace gl {

@@ -1,5 +1,5 @@
 #pragma once
-#include "backends/gl/renderer.hpp"
+#include "renderer/renderer.hpp"
 #include <functional>
 
 class TestApp : public hs::App

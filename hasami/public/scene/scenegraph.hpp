@@ -8,7 +8,7 @@
 #include "matrix.hpp"
 #include "vec3.hpp"
 #include "gtc/quaternion.hpp"
-#include "backends/gl/renderstate.hpp"
+#include "renderer/renderstate.hpp"
 
 namespace hs {
   class Renderer;

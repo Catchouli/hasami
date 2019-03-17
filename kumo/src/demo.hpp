@@ -1,8 +1,8 @@
 #pragma once
 
-#include "backends/gl/renderer.hpp"
-#include "backends/gl/mesh.hpp"
-#include "backends/gl/standardmaterial.hpp"
+#include "renderer/renderer.hpp"
+#include "renderer/mesh.hpp"
+#include "renderer/standardmaterial.hpp"
 #include "scene/scenegraph.hpp"
 #include "scene/camera.hpp"
 
