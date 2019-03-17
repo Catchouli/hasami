@@ -30,6 +30,8 @@ SDLWindowBase::SDLWindowBase(bool createGLContext)
     throw;
   }
 
+  SDL_SetWindowTitle(m_win, "Kumo");
+
   if (createGLContext) {
     SDL_GL_CreateContext(m_win);
   }

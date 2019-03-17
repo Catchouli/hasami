@@ -6,6 +6,9 @@ include(GNUInstallDirs)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BIINARY_DIR}/bin)
 
+# Disable crt secure warnings on windows
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+
 # Enable imgui support
 set(USE_IMGUI ON CACHE BOOL "")
 if(USE_IMGUI)
@@ -34,3 +37,4 @@ endif()
 add_subdirectory(hasami)
 add_subdirectory(hasami_test)
 add_subdirectory(kumo)
+add_subdirectory(kumo_test)

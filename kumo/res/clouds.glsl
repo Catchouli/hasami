@@ -18,8 +18,8 @@ in vec2 var_pos;
 
 out vec4 fragColor;
 
-vec4 sunColorIntensity = vec4(0.95, 0.95, 1.0, 0.05);
-vec3 sunDir = normalize(vec3(0.0, 0.4, 0.9));
+vec4 sunColorIntensity = vec4(0.95, 0.95, 1.0, 1.0);
+vec3 sunDir = normalize(vec3(0.0, 0.4, 0.0));
 vec4 sphere = vec4(0.0, 0.0, 0.0, 1.0);
 
 float getDensity(vec3 pos) {
@@ -28,7 +28,7 @@ float getDensity(vec3 pos) {
 }
 
 float transmittance(float opticalDepth) {
-  return exp(-2.0 * opticalDepth);
+  return exp(-16.0 * opticalDepth);
 }
 
 // henyey greenstein phase function
@@ -47,7 +47,7 @@ float lightPoint(vec3 pos, float opticalDepth) {
   float lightStepSize = lightDist / lightSamples;
   float lightOpticalDepth = 0.0;
   for (int j = 0; j < lightSamples; ++j) {
-    lightOpticalDepth += getDensity(pos + lightStepSize * j) * lightStepSize;
+    lightOpticalDepth += getDensity(pos + lightStepSize * j);
   }
   return lightOpticalDepth;
 }
@@ -71,7 +71,7 @@ vec4 trace(vec3 start, vec3 end, float samples) {
     float powder_factor = 1.0;
     float beer = exp(-lightScattered * beer_factor);
     float powder = (1.0 - exp(-2.0 * lightScattered * powder_factor));
-    light += vec3(beer * powder);
+    light += sunColorIntensity.xyz * sunColorIntensity.w * vec3(beer * powder) * stepSize;
   }
   
   float T = transmittance(opticalDepth);
