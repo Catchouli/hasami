@@ -41,16 +41,16 @@ CloudsNode::CloudsNode(hs::Renderer& renderer)
   // Create noise texture
   auto noise = std::shared_ptr<hs::Texture>(renderer.createTexture());
   {
-    int noiseResolution = 64;
+    int noiseResolution = 128;
     std::vector<float> data;
     data.reserve(noiseResolution * noiseResolution * noiseResolution);
     for (int z = 0; z < noiseResolution; ++z) {
       for (int y = 0; y < noiseResolution; ++y) {
         for (int x = 0; x < noiseResolution; ++x) {
-          const float scale = 0.01f;
-          const float lacunarity = 8.0f;
+          const float scale = 16.0f / 128.0f;
+          const float lacunarity = 2.0f;
           const float gain = 0.5f;
-          const int octaves = 5;
+          const int octaves = 8;
           data.push_back(stb_perlin_fbm_noise3(x * scale, y * scale, z * scale, lacunarity, gain, octaves));
         }
       }

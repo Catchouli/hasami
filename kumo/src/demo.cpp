@@ -23,8 +23,8 @@ Demo::Demo(hs::Window* window)
   m_camera = std::make_shared<FPSCamera>();
   m_camera->m_camSpeed = 0.025f;
   m_camera->m_camSensitivity = 0.005f;
-  //m_camera->m_pos = glm::vec3(-1.26f, 0.7f, 1.37f);
-  //m_camera->m_rot = glm::vec2(359.0f, 787.0f);
+  m_camera->m_pos = glm::vec3(1.0f, 0.25f, -1.6f);
+  m_camera->m_rot = glm::vec2(33.0f, 751.0f);
   m_camera->update(0.0f, nullptr);
   m_camera->m_lockCamera = true; //^ lock unless we have the mouse button pressed
 
@@ -96,7 +96,7 @@ Demo::Demo(hs::Window* window)
 
   // Disable some stuff by default
   skybox->m_enabled = true;
-  m_miku->m_enabled = false;
+  m_miku->m_enabled = true;
   cornellBox->m_enabled = false;
   m_globe->m_enabled = false;
 }
@@ -146,8 +146,9 @@ void Demo::render(hs::Window* window)
 
   // Update miku
   if (m_miku->m_enabled) {
-    m_miku->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
-    m_miku->m_scale = glm::vec3(0.05f, 0.05f, 0.05f) * (1.0f+0.2f*sin(time));
+    //m_miku->m_rot = glm::rotate(glm::quat(), -3.14159f * 0.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+    //m_miku->m_scale = glm::vec3(0.05f, 0.05f, 0.05f) * (1.0f+0.2f*sin(time));
+    m_miku->m_scale = glm::vec3(0.025f, 0.025f, 0.025);
     m_miku->dirtyLocal();
   }
 
