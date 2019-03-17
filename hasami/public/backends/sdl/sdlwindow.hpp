@@ -19,18 +19,19 @@ public:
   SDLWindowBase(bool createGLContext);
   ~SDLWindowBase();
 
-  void init();
-
   void setApp(App* app) override { m_app = app; }
 
   void run() override;
 
+protected:
+  void init();
+
+private:
   void imguiInit();
   void imguiShutdown();
   void imguiNewFrame();
   void imguiRender();
 
-private:
   SDL_Window* m_win;
   SDL_Renderer* m_renderer;
 

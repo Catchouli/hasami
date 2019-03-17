@@ -74,6 +74,8 @@ public:
 
 /// Renderer interface
 /// Provides access to drawing functions and other renderer resources.
+/// Note: The resources are owned by the caller and must be deleted (use smart pointers).
+/// TODO: make it so the caller doesn't have to think about this
 class Renderer
 {
 public:
