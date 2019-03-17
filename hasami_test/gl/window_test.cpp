@@ -1,7 +1,7 @@
 #include "catch.hpp"
 #include "app_test_utils.hpp"
 #include "backends/sdl/sdlwindow.hpp"
-#include "backends/glraw/glrenderer.hpp"
+#include "backends/gl/glrenderer.hpp"
 
 TEST_CASE("Window can be created", "[window]") {
   hs::sdl::Window<hs::gl::GLRenderer> window(true);

@@ -1,5 +1,5 @@
-#include "backends/glraw/glbuffer.hpp"
-#include "backends/gl/renderer.hpp"
+#include "backends/gl/glbuffer.hpp"
+#include "renderer/renderer.hpp"
 
 namespace hs {
 namespace gl {

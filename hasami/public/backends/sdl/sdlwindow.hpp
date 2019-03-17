@@ -3,7 +3,7 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 #include <memory>
-#include "backends/gl/renderer.hpp"
+#include "renderer/renderer.hpp"
 
 namespace hs {
 class App;

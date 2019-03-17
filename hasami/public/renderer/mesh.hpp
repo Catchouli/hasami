@@ -3,8 +3,8 @@
 #include <vector>
 #include <memory>
 #include <matrix.hpp>
-#include "backends/gl/renderer.hpp"
-#include "backends/gl/standardmaterial.hpp"
+#include "renderer/renderer.hpp"
+#include "renderer/standardmaterial.hpp"
 #include "scene/scenegraph.hpp"
 #include <optional>
 

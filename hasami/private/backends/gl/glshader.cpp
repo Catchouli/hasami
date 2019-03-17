@@ -6,8 +6,8 @@
 #include <chrono>
 #include "glad/glad.h"
 #include <cassert>
-#include "backends/gl/renderer.hpp"
-#include "backends/glraw/glshader.hpp"
+#include "renderer/renderer.hpp"
+#include "backends/gl/glshader.hpp"
 #include "util/filewatchservice.hpp"
 
 std::string dirnameOf(const std::string& fname);
