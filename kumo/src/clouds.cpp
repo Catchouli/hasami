@@ -49,7 +49,7 @@ CloudsNode::CloudsNode(hs::Renderer& renderer)
     const int noiseResolution = 128;
 
     std::vector<float> data;
-    cacheVector<float>("cloud_shape_cache", 1, data, [noiseResolution](std::vector<float>& data) {
+    cacheVector<float>("res/cloud_shape_cache", 1, data, [noiseResolution](std::vector<float>& data) {
       const int noiseScale = 16;
       const int noiseWrap = noiseResolution / noiseScale;
       const float coordScale = 1.0f / static_cast<float>(noiseScale);
