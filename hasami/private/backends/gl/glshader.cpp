@@ -11,6 +11,8 @@
 #include "util/filewatchservice.hpp"
 #include "shader_error_page.hpp"
 
+#define LOG_UNUSED_SYMBOLS 0
+
 namespace hs {
 namespace gl {
 
@@ -153,16 +155,20 @@ void Shader::loadFromFile(const char* srcPath)
   for (auto& attrib : m_attribs) {
     int loc = glGetAttribLocation(m_cachedShader.value()->m_prog, attrib.first.c_str());
     attrib.second.unused = (loc == -1);
+#if LOG_UNUSED_SYMBOLS
     if (attrib.second.unused) {
-      fprintf(stderr, "Attribute is unused: %s\n", attrib.first.c_str());
+      printf("Attribute is unused: %s\n", attrib.first.c_str());
     }
+#endif
   }
   for (auto& uniform : m_uniforms) {
     int loc = glGetUniformLocation(m_cachedShader.value()->m_prog, uniform.first.c_str());
     uniform.second.unused = (loc == -1);
+#if LOG_UNUSED_SYMBOLS
     if (uniform.second.unused) {
-      fprintf(stderr, "Uniform is unused: %s\n", uniform.first.c_str());
+      printf("Uniform is unused: %s\n", uniform.first.c_str());
     }
+#endif
   }
 
   FileWatchService::Instance().removeWatch(this);
