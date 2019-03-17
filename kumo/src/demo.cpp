@@ -96,7 +96,7 @@ Demo::Demo(hs::Window* window)
 
   // Disable some stuff by default
   skybox->m_enabled = true;
-  m_miku->m_enabled = true;
+  m_miku->m_enabled = false;
   cornellBox->m_enabled = false;
   m_globe->m_enabled = false;
 }

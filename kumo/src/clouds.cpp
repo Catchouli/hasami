@@ -1,13 +1,18 @@
+#include "util/cached_vector.hpp"
 #include "clouds.hpp"
 
 #include "stb_perlin.h"
+#include <functional>
+#include <cstdio>
+#include "renderer/material.hpp"
+#include "renderer/mesh.hpp"
 
 class CloudMaterial
   : public hs::StandardMaterial
 {
 public:
-  hs::SamplerT<hs::UniformType::Sampler3D> noiseTex = {"sampler_noiseTex"};
-  
+  hs::SamplerT<hs::UniformType::Sampler3D> noiseTex = { "sampler_noiseTex" };
+
   CloudMaterial(hs::Renderer* renderer, const char* shaderPath)
     : StandardMaterial(renderer, shaderPath)
   {
@@ -41,20 +46,30 @@ CloudsNode::CloudsNode(hs::Renderer& renderer)
   // Create noise texture
   auto noise = std::shared_ptr<hs::Texture>(renderer.createTexture());
   {
-    int noiseResolution = 128;
+    const int noiseResolution = 128;
+
     std::vector<float> data;
-    data.reserve(noiseResolution * noiseResolution * noiseResolution);
-    for (int z = 0; z < noiseResolution; ++z) {
-      for (int y = 0; y < noiseResolution; ++y) {
-        for (int x = 0; x < noiseResolution; ++x) {
-          const float scale = 16.0f / 128.0f;
-          const float lacunarity = 2.0f;
-          const float gain = 0.5f;
-          const int octaves = 8;
-          data.push_back(stb_perlin_fbm_noise3(x * scale, y * scale, z * scale, lacunarity, gain, octaves));
+    cacheVector<float>("cloud_shape_cache", 1, data, [noiseResolution](std::vector<float>& data) {
+      const int noiseScale = 16;
+      const int noiseWrap = noiseResolution / noiseScale;
+      const float coordScale = 1.0f / static_cast<float>(noiseScale);
+
+      const float scale = 16.0f / 128.0f;
+      const float lacunarity = 2.0f;
+      const float gain = 0.5f;
+      const int octaves = 8;
+
+      data.reserve(noiseResolution * noiseResolution * noiseResolution);
+      for (int z = 0; z < noiseResolution; ++z) {
+        for (int y = 0; y < noiseResolution; ++y) {
+          for (int x = 0; x < noiseResolution; ++x) {
+            glm::vec3 p = coordScale * glm::vec3(float(x), float(y), float(z));
+            float noise = stb_perlin_noise3(p.x, p.y, p.z, noiseWrap, noiseWrap, noiseWrap);
+            data.push_back(noise);
+          }
         }
       }
-    }
+    });
     noise->set(TextureFormat::R32F, noiseResolution, noiseResolution, noiseResolution, data.data());
   }
 
