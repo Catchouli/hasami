@@ -45,7 +45,6 @@ std::string genShaderErrorPage(const std::string& source, const std::string& err
   std::ofstream file(filename);
   std::string line;
 
-
   file << "<script src = \"https://code.jquery.com/jquery-3.3.1.min.js\"></script>" << std::endl;
 
   file << "<style type=\"text/css\">" << std::endl;

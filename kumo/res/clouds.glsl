@@ -20,27 +20,35 @@ out vec4 fragColor;
 
 vec4 sunColorIntensity = vec4(0.95, 0.95, 1.0, 0.05);
 vec3 sunDir = normalize(vec3(0.0, 0.4, 0.9));
-vec4 sphere = vec4(0.0, 0.0, -5.0, 5.0);
+vec4 sphere = vec4(0.0, 0.0, 0.0, 1.0);
 
 float getDensity(vec3 pos) {
-  return texture(sampler_noiseTex, pos).x;
+  return max(0.0, textureLod(sampler_noiseTex, pos / 8.0, 0.0).x);
 }
 
 float transmittance(float opticalDepth) {
-  return exp(-10.0 * opticalDepth);
+  return exp(-2.0 * opticalDepth);
 }
 
-vec3 lightPoint(vec3 pos, float opticalDepth) {
+// henyey greenstein phase function
+// gives clouds a bit of a silver lining and a more dynamic appearance
+float phase(vec3 inLightVector, vec3 inViewVector, float inG)
+{
+  // todo: these normalizes might not be necessary so might be a good idea to remove them and just remember to do it at a higher level
+  float cos_angle = dot(normalize(inLightVector), normalize(inViewVector));
+  return ((1.0 - inG * inG ) / pow((1.0 + inG * inG - 2.0 * inG * cos_angle ), 3.0 / 2.0)) / 4.0 * 3.1415;
+}
+
+float lightPoint(vec3 pos, float opticalDepth) {
   float T = transmittance(opticalDepth);
   int lightSamples = 8;
   float lightDist = sphere.w;
   float lightStepSize = lightDist / lightSamples;
   float lightOpticalDepth = 0.0;
   for (int j = 0; j < lightSamples; ++j) {
-    vec3 lightPos = pos + lightStepSize * j;
-    lightOpticalDepth += getDensity(lightPos) * lightStepSize;
+    lightOpticalDepth += getDensity(pos + lightStepSize * j) * lightStepSize;
   }
-  return sunColorIntensity.xyz * sunColorIntensity.w * T * transmittance(lightOpticalDepth);
+  return lightOpticalDepth;
 }
 
 vec4 trace(vec3 start, vec3 end, float samples) {
@@ -48,15 +56,21 @@ vec4 trace(vec3 start, vec3 end, float samples) {
   vec3 light = vec3(0.0);
   
   vec3 ray = end - start;
-  float len = length(ray);
+  vec3 dir = normalize(ray);
   vec3 step = ray / samples;
-  float stepSize = len / samples;
+  float stepSize = length(step);
   
   for (int i = 0; i < samples; ++i) {
-    vec3 pos = start + step * 0.5;
+    vec3 pos = start + step * i;
     float density = getDensity(pos);
     opticalDepth += density * stepSize;
-    light += lightPoint(pos, opticalDepth);
+    float lightOpticalDepth = lightPoint(pos, opticalDepth);
+    float lightScattered = phase(sunDir, dir, 0.2) * lightOpticalDepth;
+    float beer_factor = 1.0;
+    float powder_factor = 1.0;
+    float beer = exp(-lightScattered * beer_factor);
+    float powder = (1.0 - exp(-2.0 * lightScattered * powder_factor));
+    light += vec3(beer * powder);
   }
   
   float T = transmittance(opticalDepth);
@@ -90,11 +104,13 @@ bool intersectSphere(vec3 origin, vec3 direction, vec4 sph, out vec2 hit) {
 
 void calcRay(out vec3 rayOrigin, out vec3 rayDirection) {
   mat4 invMvp = inverse(uni_mvp);
+  
+  vec2 pos = var_uv * 2.0 - 1.0;
 
-  vec4 f = invMvp * vec4(var_pos, -0.5, 1.0);
+  vec4 f = invMvp * vec4(pos, -0.5, 1.0);
   vec3 start = f.xyz / f.w;
 
-  f = invMvp * vec4(var_pos, 0.5, 1.0);
+  f = invMvp * vec4(pos, 0.5, 1.0);
   vec3 end = f.xyz / f.w;
   
   rayOrigin = start;
@@ -112,25 +128,26 @@ void main() {
   if (intersectSphere(origin, direction, sphere, hit) && hit.y > 0.0) {
     vec3 entry = origin + direction * max(0.0, hit.x);
     vec3 exit = origin + direction * hit.y;
-    
-#if 0
-    vec3 normal = normalize(entry - sphere.xyz);
-    float diffuse = dot(normal, sunDir);
-    fragColor = vec4(vec3(sunColor * diffuse), 1.0);
-#endif
 
 #if 1
-    vec4 lightTransmittance = trace(origin, origin + direction * 2.0, 64);
+    vec4 lightTransmittance = trace(entry, exit, 64);
     fragColor = vec4(lightTransmittance.xyz, 1.0 - lightTransmittance.w);
 #endif
-
+    
+#if 1
+    vec3 normal = normalize(entry - sphere.xyz);
+    float diffuse = dot(normal, sunDir);
+    fragColor += 0.1 * vec4(vec3(sunColorIntensity.xyz * diffuse), 1.0);
+#endif
   }
   else {
     fragColor = vec4(0.0);
   }
   
-  //float noise = texture(sampler_noiseTex, vec3(var_uv, 0.5)).r;
-  //fragColor = vec4(vec3(noise), 1.0);
+#if 0
+  float noise = texture(sampler_noiseTex, vec3(var_uv, 0.3)).r;
+  fragColor = vec4(vec3(noise), 1.0);
+#endif
 }
 
 #endif
