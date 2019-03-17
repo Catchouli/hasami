@@ -13,6 +13,8 @@ add_library(hasami
   private/backends/gl/glshader.cpp
   public/backends/gl/gltexture.hpp
   private/backends/gl/gltexture.cpp
+  private/backends/gl/shader_error_page.hpp
+  private/backends/gl/shader_error_page.cpp
   #  renderer
   public/renderer/constants.hpp
   public/renderer/material.hpp
