@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-project(kumo VERSION 0.1 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+project(kumo LANGUAGES CXX)
 
-include(GNUInstallDirs)
-
+# This somehow helps it find dlls but I don't remember exactly why because I added it a long time ago
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BIINARY_DIR}/bin)
 
@@ -15,6 +14,12 @@ if(USE_IMGUI)
   add_definitions(-DUSE_IMGUI)
 endif(USE_IMGUI)
 
+# Macro for enabling C++17 support on a project
+macro(enableCXX17 proj)
+  target_compile_options(${proj} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std:c++latest>)
+endmacro(enableCXX17)
+
+# third party libs
 add_subdirectory(libs/sdl2)
 add_subdirectory(libs/glad)
 add_subdirectory(libs/glm)
@@ -25,16 +30,9 @@ add_subdirectory(libs/imgui)
 add_subdirectory(libs/stb)
 add_subdirectory(libs/catch)
 
-# Enable C++17 in VS2017
-if (MSVC_VERSION GREATER_EQUAL "1900")
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
-    if (_cpp_latest_flag_supported)
-        add_compile_options("/std:c++latest")
-    endif()
-endif()
-
+# our projects
 add_subdirectory(hasami)
 add_subdirectory(hasami_test)
+add_subdirectory(hikari)
 add_subdirectory(kumo)
 add_subdirectory(kumo_test)

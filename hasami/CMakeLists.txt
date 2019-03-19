@@ -36,6 +36,8 @@ add_library(hasami
   public/util/util.hpp
 )
 
+enableCXX17(hasami)
+
 target_link_libraries(hasami SDL2 glad glm SDL2 tiny_obj_loader FreeImage simplefilewatcher imgui)
 
 target_include_directories(hasami PUBLIC

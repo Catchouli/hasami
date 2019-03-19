@@ -11,7 +11,6 @@
 #include <Shellapi.h>
 #include <winuser.h>
 #define mktemp _mktemp
-#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 namespace hs {

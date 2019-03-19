@@ -2,7 +2,6 @@
 
 #include "backends/sdl/sdlwindow.hpp"
 #include "backends/gl/glrenderer.hpp"
-#include "backends/gl/glshader.hpp"
 
 
 int main(int argc, char** argv)
