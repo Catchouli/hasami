@@ -6,6 +6,8 @@ add_executable(hasami_test
   gl/renderer_test.cpp
 )
 
+enableCXX17(hasami_test)
+
 target_link_libraries(hasami_test hasami catch)
 
 target_include_directories(hasami_test PRIVATE .)

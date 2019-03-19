@@ -4,6 +4,8 @@ add_executable(kumo_test
   util/cached_vector_test.cpp
 )
 
+enableCXX17(kumo_test)
+
 target_link_libraries(kumo_test kumo_lib catch)
 
 target_include_directories(kumo_test PRIVATE .)
