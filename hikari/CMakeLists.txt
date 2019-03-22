@@ -12,6 +12,7 @@ add_executable(hikari
   src/hikari.hpp
   src/hikari.cpp
   src/trace.cu
+  src/trace.hpp
 )
 
 enableCXX17(hikari)
