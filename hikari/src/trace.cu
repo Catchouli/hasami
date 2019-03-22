@@ -1,92 +1,93 @@
 #include <stdio.h>
+#include <cstring>
+#include <cassert>
 
-//
-// Nearly minimal CUDA example.
-// Compile with:
-//
-// nvcc -o example example.cu
-//
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+#include "glad/glad.h"
+#include "cuda_gl_interop.h"
 
-#define N 1000
+#include "trace.hpp"
 
-//
-// A function marked __global__
-// runs on the GPU but can be called from
-// the CPU.
-//
-// This function multiplies the elements of an array
-// of ints by 2.
-//
-// The entire computation can be thought of as running
-// with one thread per array element with blockIdx.x
-// identifying the thread.
-//
-// The comparison i<N is because often it isn't convenient
-// to have an exact 1-1 correspondence between threads
-// and array elements. Not strictly necessary here.
-//
-// Note how we're mixing GPU and CPU code in the same source
-// file. An alternative way to use CUDA is to keep
-// C/C++ code separate from CUDA code and dynamically
-// compile and load the CUDA code at runtime, a little
-// like how you compile and load OpenGL shaders from
-// C/C++ code.
-//
-__global__
-void add(int *a, int *b) {
-  int i = blockIdx.x;
-  if (i < N) {
-    b[i] = 2 * a[i];
+void cudaCheckErr() {
+  // check for error
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) {
+    // print the CUDA error message and exit
+    printf("CUDA error: %s\n", cudaGetErrorString(error));
+    exit(-1);
   }
 }
 
-int trace() {
-  //
-  // Create int arrays on the CPU.
-  // ('h' stands for "host".)
-  //
-  int ha[N], hb[N];
+void cudaAssert(cudaError_t code, const char *file, int line, bool abort)
+{
+  if (code != cudaSuccess) {
+    fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
 
-  //
-  // Create corresponding int arrays on the GPU.
-  // ('d' stands for "device".)
-  //
-  int *da, *db;
-  cudaMalloc((void **)&da, N * sizeof(int));
-  cudaMalloc((void **)&db, N * sizeof(int));
+    system("pause");
 
-  //
-  // Initialise the input data on the CPU.
-  //
-  for (int i = 0; i < N; ++i) {
-    ha[i] = i;
+    if (abort) {
+      exit(code);
+    }
+  }
+}
+
+CudaSurface::CudaSurface(unsigned int texid)
+  : m_cudaGraphicsResource(nullptr)
+  , m_cudaArray(nullptr)
+  , m_mapped(false)
+{
+  // todo: make this short circuit if one fails
+  cudaCheck(cudaGraphicsGLRegisterImage(&m_cudaGraphicsResource, texid, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_SURFACE_LDST));
+}
+
+CudaSurface::~CudaSurface()
+{
+  if (m_mapped) {
+    unmap();
+  }
+}
+
+
+cudaSurfaceObject_t CudaSurface::map() {
+  assert(!m_mapped);
+  if (!m_mapped) {
+    m_mapped = true;
+
+    cudaCheck(cudaGraphicsMapResources(1, &m_cudaGraphicsResource));
+    cudaCheck(cudaGraphicsSubResourceGetMappedArray(&m_cudaArray, m_cudaGraphicsResource, 0, 0));
+
+    cudaResourceDesc pixelDescription;
+    memset(&pixelDescription, 0, sizeof(pixelDescription));
+    pixelDescription.resType = cudaResourceTypeArray;
+    pixelDescription.res.array.array = m_cudaArray;
+    cudaCheck(cudaCreateSurfaceObject(&m_pixelSurface, &pixelDescription));
   }
 
-  //
-  // Copy input data to array on GPU.
-  //
-  cudaMemcpy(da, ha, N * sizeof(int), cudaMemcpyHostToDevice);
+  return m_pixelSurface;
+}
 
-  //
-  // Launch GPU code with N threads, one per
-  // array element.
-  //
-  add << <N, 1 >> > (da, db);
+void CudaSurface::unmap() {
+  assert(m_mapped);
+  if (m_mapped) {
+    m_mapped = false;
 
-  //
-  // Copy output array from GPU back to CPU.
-  //
-  cudaMemcpy(hb, db, N * sizeof(int), cudaMemcpyDeviceToHost);
-
-  for (int i = 0; i < N; ++i) {
-    printf("%d\n", hb[i]);
+    cudaCheck(cudaGraphicsUnmapResources(1, &m_cudaGraphicsResource));
+    cudaCheck(cudaDestroySurfaceObject(m_pixelSurface));
   }
+}
 
-  //
-  // Free up the arrays on the GPU.
-  //
-  cudaFree(da);
-  cudaFree(db);
+__global__
+void trace_kernel(cudaSurfaceObject_t pixelSurface, float time) {
+  int idx = blockIdx.x;
+  int idy = blockIdx.y;
+  surf2Dwrite<float4>(float4{fmod(time / 6.0f, 1.0f), 0.0f, 0.0f, 1.0f}, pixelSurface, idx * 16, idy);
+}
 
+int trace(CudaSurface* cudaSurface, float time) {
+  auto surf = cudaSurface->map();
+  trace_kernel<<<dim3(800, 800, 1), 1>>>(surf, time);
+  cudaCheckErr();
+  cudaSurface->unmap();
   return 0;
 }
